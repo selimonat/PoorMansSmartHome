@@ -50,9 +50,9 @@ def plotlog_ikea_lamp(filename,output_folder='/tmp/'):
         brightness      = np.bincount(time_bin,state*lamp_data[0,:])/active_count
         hue             = np.bincount(time_bin,state*lamp_data[1,:])/active_count    
         final.update({int(lamp):{"hue":hue,"brightness":brightness,"state":active_count/all_count}})
-                
+        plt.figure(1)       
         plt.subplot(3,1,1)
-        plt.title(key)
+        plt.title(lamp)
         plt.plot( final[lamp]["state"] )
         
         plt.subplot(3,1,2)
@@ -61,7 +61,7 @@ def plotlog_ikea_lamp(filename,output_folder='/tmp/'):
         plt.subplot(3,1,3)
         plt.plot( final[lamp]["hue"] )
         
-        plt.savefig(output_folder + 'lamp_stats_' + int(lamp) + '.png')
-        plt.show()
+        plt.savefig(output_folder + 'lamp_stats_' + str(int(lamp)) + '.png')
+        plt.close(1)
 
     return final
