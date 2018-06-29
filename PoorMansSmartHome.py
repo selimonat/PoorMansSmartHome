@@ -65,14 +65,3 @@ def plotlog_ikea_lamp(filename,output_folder='/tmp/'):
         plt.show()
 
     return final
-        
-def plotlog_ikea_lamp(final):
-    '''
-        takes the parsed ikea log file and computes 3 by 6 subplot
-    '''
-    t_lamp = len(final)
-    plt.figure(figsize=(20,10))
-    for lamp in range(1,t_lamp+1):
-        key = list(final.keys())[lamp-1]
-        
-        
