@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-def plotlog_iOS_Presence(log_file,output_folder='/tmp/'):
+def plotlog_iOS_Presence(log_file="/home/pi/device_presence.log",output_folder='/tmp/'):
     """
         (log_file) is logged device presence data from iOS_Presence.sh.
         Parses the log file and produces a png figure saved in /tmp/device_presence.png
@@ -28,7 +28,7 @@ def plotlog_iOS_Presence(log_file,output_folder='/tmp/'):
     plt.savefig(output_folder + 'device_presence.png')
     plt.show()
 
-def plotlog_ikea_lamp(filename,output_folder='/tmp/'):
+def plotlog_ikea_lamp(filename="/home/pi/ikea_lamps.log",output_folder='/tmp/'):
     '''
         parses log file (filename), returns state, brightness and hue of 6
         lamps as a dict with lamp numbers.
