@@ -8,6 +8,9 @@ import subprocess
 import time as t
 
 def log_audio():
+    """ Takes a snapshot of the auditory landscape, computes its Fourier
+    transform, and saves the result to the log file with its time stamp. 
+    """
     from scipy.fftpack import rfft
     import time, os
     
@@ -25,11 +28,16 @@ def log_audio():
         savetxt(file,[signal_time])
 
 def record_sound():
+    """ Triggers ALSA record command to save an auditory snapshot onto 
+    a wav file.
+    """
     command = "/usr/bin/arecord --device=hw:1,0 --format S16_LE --rate " + str(sampling_rate) + " -c1  -d " + str(audio_duration) + " /tmp/test.wav"  
     #print(command)
     return subprocess.call([command],shell=True), round(t.time())  
 
 def wav_to_float(wave_file="/tmp/test.wav"):
+    """ Reads the wav file and converts it to flat
+    """
     import wave
     import struct
     import sys
@@ -42,6 +50,7 @@ def wav_to_float(wave_file="/tmp/test.wav"):
     return a
 
 def log_device():
-    
+    """ Pings devices, saves the result to a log file.
+    """
     command = "/home/pi/code/shell/bin/iOS_Presence_Logger.sh"
     return subprocess.call([command],shell=True), round(t.time()) 
