@@ -25,7 +25,7 @@ def log_audio():
 def record_sound():
     import subprocess
     import time as t
-    command = "/usr/bin/arecord --device=hw:1,0 --format S16_LE --rate " + str(sampling_rate) + " -c1 -V mono -d " + str(audio_duration) + " /tmp/test.wav"  
+    command = "/usr/bin/arecord --device=hw:1,0 --format S16_LE --rate " + str(sampling_rate) + " -c1  -d " + str(audio_duration) + " /tmp/test.wav"  
     #print(command)
     return subprocess.call([command],shell=True), round(t.time())  
 
