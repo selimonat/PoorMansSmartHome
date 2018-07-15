@@ -4,6 +4,8 @@ audio_duration     = 5 #seconds
 sampling_rate      = 44100 #Hz
 NyquistFreq        = sampling_rate/2
 from numpy import savetxt, linspace, round
+import subprocess
+import time as t
 
 def log_audio():
     from scipy.fftpack import rfft
@@ -23,8 +25,6 @@ def log_audio():
         savetxt(file,[signal_time])
 
 def record_sound():
-    import subprocess
-    import time as t
     command = "/usr/bin/arecord --device=hw:1,0 --format S16_LE --rate " + str(sampling_rate) + " -c1  -d " + str(audio_duration) + " /tmp/test.wav"  
     #print(command)
     return subprocess.call([command],shell=True), round(t.time())  
@@ -40,3 +40,8 @@ def wav_to_float(wave_file="/tmp/test.wav"):
     a = struct.unpack("%ih" % (w.getnframes()* w.getnchannels()), astr)
     a = [float(val) / pow(2, 15) for val in a]
     return a
+
+def log_device():
+    
+    command = "/home/pi/code/shell/bin/iOS_Presence_Logger.sh"
+    return subprocess.call([command],shell=True), round(t.time()) 
