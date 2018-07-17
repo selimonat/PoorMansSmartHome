@@ -11,6 +11,8 @@ class Home:
         self.file_human_presence = "/home/pi/human_presence.log" 
         self.file_ikea_log       = "/home/pi/ikea_lamps.log" 
         #self.log                 = {"device" : d,"human":[d]} 
+        self.file_google_history = '/home/pi/MapHistory//Takeout/Location History/Location History.json'
+        self.file_google_labels  = '/home/pi/MapHistory/Takeout/Maps/My labeled places/Labeled places.json'
 
     def get_device_log(self):
         """
@@ -21,6 +23,35 @@ class Home:
         d.time_sec               = d.time_sec.apply(lambda x: int(x[1:])) #remove the @ sign
         return d
  
+    def get_location_history(self,delta=(0.001,0.002)):
+        '''
+            Computes a binary home presence vector based on data logged in google map and 
+            coordinates of home.
+            LocationHistory and LabeledPlaces can be both downloaded from Google Servers.
+            Delta (latitude, longitude) defines spatial extend where a point is considered as "at_home".
+            Returns a DataFrame object containing all history data together with the at_home state vector.
+        '''
+        import json
+        
+        #extract home latitude and longitude from the homefile (assumes you labeled home as Home)
+        with open(self.file_google_labels) as json_data:
+            locations = json.load(json_data)
+        home_latitude, home_longitude =  [j for i in locations["features"] if i['properties']['name']=='Home' for j in i["geometry"]["coordinates"]]
+    
+        #load geo-history data
+        with open(self.file_google_history) as json_data:
+            list = json.load(json_data)
+        df = pd.DataFrame(list['locations'])
+        df["latitude"]  = df.latitudeE7/10000000
+        df["longitude"] = df.longitudeE7/10000000
+        df['timestamp'] = df.timestampMs.apply(lambda x: round(float(x)/1000))
+        df.drop(["longitudeE7","latitudeE7","timestampMs"],axis=1,inplace=True)    
+        
+        #compute binary state vector of home presence.
+        df["at_home"] = (df.latitude > home_latitude-delta[0]) & (df.latitude < home_latitude+delta[0]) & (df.longitude > home_longitude-delta[0]) & (df.longitude < home_longitude+delta[0])
+        
+        return df
+    
     def get_ikea_log(self):
         """
         Reads the lamp log.
@@ -46,6 +77,18 @@ class Home:
             #brightness      = np.bincount(time_bin,state*lamp_data[0,:])/active_count
             #hue             = np.bincount(time_bin,state*lamp_data[1,:])/active_count    
             #final.update({int(lamp):{"hue":hue,"brightness":brightness,"state":active_count/all_count}})
+    def at_home(self,df):
+        '''
+            Will add the at_home column to a DF by comparing its epoch time to location history
+        '''
+        at_home            = []
+        human              = self.get_location_history() 
+        geo_start,geo_stop = human.timestamp.min(), human.timestamp.max()
+        
+        i                  = df.time_sec.apply((lambda x,y: np.argmin(np.abs(x-y)) if (x>geo_start)&(x<geo_stop) else None),y=human.timestamp )
+        df["at_home"] = human.at_home[i].values
+        return df
+       
 def EpochConverter(epoch,to):
     """
     Converts linux epoch time to TO.
