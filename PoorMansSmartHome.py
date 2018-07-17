@@ -25,49 +25,27 @@ class Home:
         """
         Reads the lamp log.
         """
-        
         d = pd.read_csv(self.file_ikea_log,header=None,delimiter=" ",usecols=list(range(0,24)) + [31])
-        #d = d.astype(np.float64).values
-        time_bin  = d.iloc[:,-1].apply(lambda x: EpochConverter(x,"%H"))
-        lamps     = np.unique(d.iloc[:,list(range(0,21,4))])
-        final     = dict();
+        d = d.astype(np.float64).values
+    
+        time      = d[:,-1]
+        time_bin  = np.int8(np.floor((time % (60*60*24))/(60*60)))  #time bin
+        lamps     = np.unique(d[:,list(range(0,21,4))])
+        lampdata = dict()
         for lamp in lamps:
-            i               = d == lamp
-            lamp_data       = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
-            state           = lamp_data[2,:]
-            all_count       = np.bincount(time_bin)
-            active_count    = np.bincount(time_bin,state)
-            brightness      = np.bincount(time_bin,state*lamp_data[0,:])/active_count
-            hue             = np.bincount(time_bin,state*lamp_data[1,:])/active_count    
-            final.update({int(lamp):{"hue":hue,"brightness":brightness,"state":active_count/all_count}})
-        return final
- 
-    def plot_device_log(self,binning_factor,output_folder=None):
-        """
-            (log_file) is logged device presence data from iOS_Presence.sh.
-            Parses the log file and produces a png figure saved in /tmp/device_presence.png
-        """
-        df             = self.get_device_log()
-        dummy          = df.time_sec.apply(lambda x: EpochConverter(x,binning_factor))
-        dummy          = dummy.astype(np.int32)
-        t              = np.unique(dummy)                        #possible hours
-        T              = np.bincount(list(dummy))                      #total counts for each hour
-        plt.plot(t,np.bincount(dummy,df.selim_laptop)/T ,'red',   #proportion of counts where device is active.
-                 t,np.bincount(dummy,df.selim_phone)/T  ,'darksalmon',
-                 t,np.bincount(dummy,df.sonja_laptop)/T ,'blue',
-                 t,np.bincount(dummy,df.sonja_phone)/T  ,'skyblue')
+            i                   = d == lamp
+            dummy               = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
+            lampdata[str(int(lamp))] = pd.DataFrame({"state":dummy[0,],"brightness":dummy[1,],"hue":dummy[2,]})
 
-        # plt.plot(t,np.bincount(d.time_hour,d.sonja2)/T)  
-        plt.legend(('SEL_comp','SEL_phone','SON_comp','SON_phone'))
-        plt.xlabel('Hours of the day')
-        plt.ylabel('p(active | device)')
-        if output_folder is not None:
-            plt.savefig(output_folder + 'device_presence.png')
-        plt.show()
- 
-    def plot_ikea_log(self): 
-        1  
+        lamp_df = pd.concat(lampdata,axis=1)
 
+        return lamp_df
+            #state           = lamp_data[2,:]
+            #all_count       = np.bincount(time_bin)
+            #active_count    = np.bincount(time_bin,state)
+            #brightness      = np.bincount(time_bin,state*lamp_data[0,:])/active_count
+            #hue             = np.bincount(time_bin,state*lamp_data[1,:])/active_count    
+            #final.update({int(lamp):{"hue":hue,"brightness":brightness,"state":active_count/all_count}})
 def EpochConverter(epoch,to):
     """
     Converts linux epoch time to TO.
