@@ -38,7 +38,7 @@ class Home:
             lampdata[str(int(lamp))] = pd.DataFrame({"state":dummy[0,],"brightness":dummy[1,],"hue":dummy[2,]})
 
         lamp_df = pd.concat(lampdata,axis=1)
-
+        lamp_df["time_sec"] = time
         return lamp_df
             #state           = lamp_data[2,:]
             #all_count       = np.bincount(time_bin)
