@@ -9,6 +9,7 @@ class Home:
     def __init__(self):
         self.file_device_log     = "/home/pi/device_presence.log" 
         self.file_human_presence = "/home/pi/human_presence.log" 
+        self.file_mic_log        = "/home/pi/mic.log" 
         self.file_ikea_log       = "/home/pi/ikea_lamps.log" 
         #self.log                 = {"device" : d,"human":[d]} 
         self.file_google_history = '/home/pi/MapHistory//Takeout/Location History/Location History.json'
@@ -22,7 +23,12 @@ class Home:
         d                        = pd.read_csv(self.file_device_log,delimiter=" ",names=["selim_laptop","sonja_laptop","selim_phone","sonja_phone","time_sec"],usecols=[1,2,3,4,6])
         d.time_sec               = d.time_sec.apply(lambda x: int(x[1:])) #remove the @ sign
         return d
- 
+    def get_mic_log(self):
+        """
+        reads mic log
+        """
+        df = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"])
+        return df
     def get_location_history(self,delta=(0.001,0.002)):
         '''
             Computes a binary home presence vector based on data logged in google map and 
