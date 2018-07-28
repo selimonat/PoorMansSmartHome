@@ -95,8 +95,20 @@ class Home:
         i                  = df.time_sec.apply((lambda x,y: np.argmin(np.abs(x-y)) if (x>geo_start)&(x<geo_stop) else None),y=human.timestamp )
         df["at_home"] = human.at_home[i].values
         return df
+
+def merge_log(log1,log2,res=60):
+    """
+        Aligns two dataframes at a resolution of RES.
+        Uses epoch time columns of both DataFrames
+        Default resolution is in minutes, all data in the same minute
+        after epoch time is considered to belong together and merged.
+    """
+    log1["merger"] = log1.time_sec.apply(lambda x:x//res) 
+    log2["merger"] = log2.time_sec.apply(lambda x:x//res) 
+    
+    return pd.merge( log1 , log2 , on = ['merger'] )
        
-def EpochConverter(epoch,to):
+def EpochConverter(serie,to):
     """
     Converts linux epoch time to TO.
 
@@ -117,9 +129,8 @@ def EpochConverter(epoch,to):
     %p  Locale's equivalent of either AM or PM.
     """
     import time
-    return np.int8(time.strftime(to,time.gmtime(epoch)))
+    return serie.apply( lambda x,to: time.strftime(to,time.gmtime(x)),to=to)
 
-    #return np.int8(np.floor((epoch%(60*60*24))/(60*60)))
         
 
 
