@@ -27,7 +27,8 @@ class Home:
         """
         reads mic log
         """
-        df = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"])
+        df          = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"])
+        df.time_sec = df.time_sec.astype('int64')
         return df
     def get_location_history(self,delta=(0.001,0.002)):
         '''
@@ -50,7 +51,7 @@ class Home:
         df = pd.DataFrame(list['locations'])
         df["latitude"]  = df.latitudeE7/10000000
         df["longitude"] = df.longitudeE7/10000000
-        df['timestamp'] = df.timestampMs.apply(lambda x: round(float(x)/1000))
+        df['timestamp'] = df.timestampMs.apply(lambda x: int(round(float(x)/1000)))
         df.drop(["longitudeE7","latitudeE7","timestampMs"],axis=1,inplace=True)    
         
         #compute binary state vector of home presence.
