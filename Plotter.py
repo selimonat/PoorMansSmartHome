@@ -1,22 +1,32 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import PoorMansSmartHome.PoorMansSmartHome as p
+import numpy as np
 
-def plot_log(df):   
-    t              = np.unique(dummy)                        #possible hours
-    T              = np.bincount(list(dummy))                      #total counts for each hour
-    plt.plot(t,np.bincount(dummy,df.selim_laptop)/T ,'red',   #proportion of counts where device is active.
-             t,np.bincount(dummy,df.selim_phone)/T  ,'darksalmon',
-             t,np.bincount(dummy,df.sonja_laptop)/T ,'blue',
-             t,np.bincount(dummy,df.sonja_phone)/T  ,'skyblue')
-
-   # plt.plot(t,np.bincount(d.time_hour,d.sonja2)/T)  
-    plt.legend(('SEL_comp','SEL_phone','SON_comp','SON_phone'))
-    plt.xlabel('Hours of the day')
-    plt.ylabel('p(active | device)')    
+def plot_log(df,output_folder=None):
+    """
+    plots and optinally saves the log after binning epoch second onto hours of the day.
+    """
+    #hours   = list(df.time_sec.apply(lambda x: np.floor(x % (3600*24*7) / (3600*24))))
+    hours   = list(df.time_sec.apply(lambda x: np.floor(x % (3600*24) / (3600))))
+    t              = np.unique(hours)                        #possible hours
+    T              = np.bincount(hours)                      #total counts for each hour
+    cols           = df.columns
+    plt.close()
+    for col in cols:
+        if col != "time_sec":
+            color = tuple(map(tuple,np.random.rand(1,3)))[0]
+            plt.plot(t,np.bincount(hours,df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
+    plt.legend(cols)
+    plt.xticks(np.arange(min(t),max(t),3))
+    ax = plt.gca()
+    ax.grid(which='major', axis='x', linestyle='--')
+#   plt.xlabel('Hours of the day')
+#   plt.ylabel('p(active | device)')    
     if output_folder is not None:
-        plt.savefig(output_folder + 'device_presence.png')
-        plt.show()
+       plt.savefig(output_folder + 'device_presence.png')
+       plt.show()
 
 
 def plotlog_ikea_lamp(filename="/home/pi/ikea_lamps.log",output_folder='/home/pi/code/python/homeserver/static/'):
