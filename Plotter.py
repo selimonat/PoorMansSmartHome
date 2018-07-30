@@ -3,12 +3,15 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import PoorMansSmartHome.PoorMansSmartHome as p
 import numpy as np
+from scipy.stats import zscore
 
-def plot_log(df,output_folder=None):
+def plot_log(df,output_folder=None,normalize=False):
     """
     plots and optinally saves the log after binning epoch second onto hours of the day.
     """
     #hours   = list(df.time_sec.apply(lambda x: np.floor(x % (3600*24*7) / (3600*24))))
+        
+        
     hours   = list(df.time_sec.apply(lambda x: np.floor(x % (3600*24) / (3600))))
     t              = np.unique(hours)                        #possible hours
     T              = np.bincount(hours)                      #total counts for each hour
@@ -16,6 +19,8 @@ def plot_log(df,output_folder=None):
     plt.close()
     for col in cols:
         if col != "time_sec":
+            if normalize is True:
+                df[col] = (df[col] - df[col].mean())/df[col].std(ddof=0)
             color = tuple(map(tuple,np.random.rand(1,3)))[0]
             plt.plot(t,np.bincount(hours,df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
     plt.legend(cols)
