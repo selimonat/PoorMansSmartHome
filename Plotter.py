@@ -1,11 +1,10 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import PoorMansSmartHome.PoorMansSmartHome as p
 import numpy as np
 from scipy.stats import zscore
 
-def plot_log(df,output_folder=None,normalize=False):
+def plot_log(df,cols="all",output_file=None,normalize=False):
     """
     plots and optinally saves the log after binning epoch second onto hours of the day.
     """
@@ -15,7 +14,12 @@ def plot_log(df,output_folder=None,normalize=False):
     hours   = list(df.time_sec.apply(lambda x: np.floor(x % (3600*24) / (3600))))
     t              = np.unique(hours)                        #possible hours
     T              = np.bincount(hours)                      #total counts for each hour
-    cols           = df.columns
+    
+    if cols is "all":
+        cols           = df.columns
+    else:
+        cols           = df.iloc[:,cols]
+
     plt.close()
     for col in cols:
         if col != "time_sec":
@@ -27,10 +31,8 @@ def plot_log(df,output_folder=None,normalize=False):
     plt.xticks(np.arange(min(t),max(t),3))
     ax = plt.gca()
     ax.grid(which='major', axis='x', linestyle='--')
-#   plt.xlabel('Hours of the day')
-#   plt.ylabel('p(active | device)')    
     if output_folder is not None:
-       plt.savefig(output_folder + 'device_presence.png')
+       plt.savefig(output_file)
        plt.show()
 
 
