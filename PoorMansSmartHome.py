@@ -68,19 +68,14 @@ class Home:
         lamps     = np.unique(d[:,list(range(0,21,4))])
         lampdata = dict()
         for lamp in lamps:
+            print(lamp)
             i                   = d == lamp
             dummy               = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
-            lampdata[str(int(lamp))] = pd.DataFrame({"state":dummy[0,],"brightness":dummy[1,],"hue":dummy[2,]})
-
+            lampdata[str(int(lamp))] = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,]})
         lamp_df = pd.concat(lampdata,axis=1)
         lamp_df["time_sec"] = time
         return lamp_df
-            #state           = lamp_data[2,:]
-            #all_count       = np.bincount(time_bin)
-            #active_count    = np.bincount(time_bin,state)
-            #brightness      = np.bincount(time_bin,state*lamp_data[0,:])/active_count
-            #hue             = np.bincount(time_bin,state*lamp_data[1,:])/active_count    
-            #final.update({int(lamp):{"hue":hue,"brightness":brightness,"state":active_count/all_count}})
+    
     def at_home(self,df):
         '''
             Will add the at_home column to a DF by comparing its epoch time to location history
