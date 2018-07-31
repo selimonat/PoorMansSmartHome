@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-
+from PoorMansSmartHome import Plotter as pl
 
 class Home:
     def __init__(self):
@@ -11,6 +11,18 @@ class Home:
         #self.log                 = {"device" : d,"human":[d]} 
         self.file_google_history = '/home/pi/MapHistory//Takeout/Location History/Location History.json'
         self.file_google_labels  = '/home/pi/MapHistory/Takeout/Maps/My labeled places/Labeled places.json'
+    
+    def get_plots(self):
+        
+        df = self.get_ikea_log() 
+        cols = [2,5,8,11,14,17]
+        pl.plot_log(df,cols,"/tmp/ikea_lamp_state.png")      
+        
+        df = self.get_device_log()
+        pl.plot_log(df,'all',"/tmp/device_log.png")
+        
+        df = self.get_mic_log()
+        pl.plot_log(df,'all',"/tmp/mic_log.png",normalize=True)
 
     def get_device_log(self):
         """
@@ -68,7 +80,6 @@ class Home:
         lamps     = np.unique(d[:,list(range(0,21,4))])
         lampdata = dict()
         for lamp in lamps:
-            print(lamp)
             i                   = d == lamp
             dummy               = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
             lampdata[str(int(lamp))] = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,]})
