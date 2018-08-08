@@ -4,29 +4,37 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import zscore
 
+def plot_log_shaded(df):
+    '''
+        Plots log
+    '''   
+    #for g in df.groupby(['days']):
+    #    plot(
+
 def plot_log(df,cols="all",output_file=None,normalize=False):
     """
-    plots and optinally saves the log after binning epoch second onto hours of the day.
+    plots the log and optinally saves the figure. 
+    maps all log values to either of the 24 possible hours.
+    plots the average of log value in that bin.
     """
-    #hours   = list(df.time_sec.apply(lambda x: np.floor(x % (3600*24*7) / (3600*24))))
-        
-        
-    hours   = list(df.time_sec.apply(lambda x: np.floor(x % (3600*24) / (3600))))
-    t              = np.unique(hours)                        #possible hours
-    T              = np.bincount(hours)                      #total counts for each hour
+    #bins to hours
+    t              = np.unique(df.hours)                        #possible hours
+    T              = np.bincount(df.hours)                      #total counts for each hour
     
+    #take either all or selected columns
     if cols is "all":
         cols           = df.columns
     else:
         cols           = df.iloc[:,cols]
 
+    #plot columns except the time stamp column, and z-score transform if required.
     plt.close()
     for col in cols:
-        if col != "time_sec":
+        if np.isin(col,["time_sec","time_hour","time_day"]) is False:
             if normalize is True:
                 df[col] = (df[col] - df[col].mean())/df[col].std(ddof=0)
             color = tuple(map(tuple,np.random.rand(1,3)))[0]
-            plt.plot(t,np.bincount(hours,df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
+            plt.plot(t,np.bincount(df.hours,df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
     plt.legend(cols)
     plt.xticks(np.arange(min(t),max(t),3))
     ax = plt.gca()
