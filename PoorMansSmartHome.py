@@ -13,7 +13,9 @@ class Home:
         self.file_google_labels  = '/home/pi/MapHistory/Takeout/Maps/My labeled places/Labeled places.json'
     
     def get_plots(self):
-        
+        """
+        Exports a set of plots fom ikea, device and mic logs.
+        """       
         df = self.get_ikea_log() 
         cols = [2,5,8,11,14,17]
         pl.plot_log(df,cols,"/tmp/ikea_lamp_state.png")      
@@ -31,6 +33,7 @@ class Home:
         """
         d                        = pd.read_csv(self.file_device_log,delimiter=" ",names=["selim_laptop","sonja_laptop","selim_phone","sonja_phone","time_sec"],usecols=[1,2,3,4,6])
         d.time_sec               = d.time_sec.apply(lambda x: int(x[1:])) #remove the @ sign
+        d                        = AttributeAdd(d)
         return d
     def get_mic_log(self):
         """
@@ -38,6 +41,7 @@ class Home:
         """
         df          = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"])
         df.time_sec = df.time_sec.astype('int64')
+        df          = AttributeAdd(df)
         return df
     def get_location_history(self,delta=(0.001,0.002)):
         '''
@@ -65,7 +69,7 @@ class Home:
         
         #compute binary state vector of home presence.
         df["at_home"] = (df.latitude > home_latitude-delta[0]) & (df.latitude < home_latitude+delta[0]) & (df.longitude > home_longitude-delta[0]) & (df.longitude < home_longitude+delta[0])
-        
+        df            = AttributeAdd(df)
         return df
     
     def get_ikea_log(self):
@@ -85,6 +89,7 @@ class Home:
             lampdata[str(int(lamp))] = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,]})
         lamp_df = pd.concat(lampdata,axis=1)
         lamp_df["time_sec"] = time
+        lamp_df = AttributeAdd(lamp_df)
         return lamp_df
     
     def at_home(self,df):
@@ -98,6 +103,13 @@ class Home:
         i                  = df.time_sec.apply((lambda x,y: np.argmin(np.abs(x-y)) if (x>geo_start)&(x<geo_stop) else None),y=human.timestamp )
         df["at_home"] = human.at_home[i].values
         return df
+
+def AttributeAdd(df):
+    
+    df["hours"]   = list(df.time_sec.apply(lambda x: np.floor( (x / 3600)      % 24    )))  # hours of the day
+    df["days"]    = list(df.time_sec.apply(lambda x: np.floor( (x / (3600*24))         )))  # days of the week
+        
+    return df
 
 def merge_log(log1,log2,res=60):
     """
