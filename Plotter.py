@@ -18,28 +18,29 @@ def plot_log(df,cols="all",output_file=None,normalize=False):
     plots the average of log value in that bin.
     """
     #bins to hours
-    t              = np.unique(df.hours)                        #possible hours
-    T              = np.bincount(df.hours)                      #total counts for each hour
+    t              = np.unique(df.time_hour)                        #possible hours
+    T              = np.bincount(list(df.time_hour))                      #total counts for each hour
     
     #take either all or selected columns
     if cols is "all":
         cols           = df.columns
     else:
-        cols           = df.iloc[:,cols]
+        cols           = df.columns[cols]
 
     #plot columns except the time stamp column, and z-score transform if required.
     plt.close()
     for col in cols:
-        if np.isin(col,["time_sec","time_hour","time_day"]) is False:
+        if np.all(np.isin(col,["time_sec","time_hour","time_day"])) == False:
             if normalize is True:
                 df[col] = (df[col] - df[col].mean())/df[col].std(ddof=0)
             color = tuple(map(tuple,np.random.rand(1,3)))[0]
-            plt.plot(t,np.bincount(df.hours,df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
+            plt.plot(t,np.bincount(list(df.time_hour),df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
     plt.legend(cols)
     plt.xticks(np.arange(min(t),max(t),3))
     ax = plt.gca()
     ax.grid(which='major', axis='x', linestyle='--')
-    if output_folder is not None:
+    if output_file is not None:
+       print('will print something')
        plt.savefig(output_file)
        plt.show()
 
