@@ -106,8 +106,8 @@ class Home:
 
 def AttributeAdd(df):
     
-    df["hours"]   = list(df.time_sec.apply(lambda x: np.floor( (x / 3600)      % 24    )))  # hours of the day
-    df["days"]    = list(df.time_sec.apply(lambda x: np.floor( (x / (3600*24))         )))  # days of the week
+    df["time_hour"]   = list(df.time_sec.apply(lambda x: int(np.floor( (x / 3600)      % 24    ))))  # hours of the day
+    df["time_day"]    = list(df.time_sec.apply(lambda x: int(np.floor( (x / (3600*24))         ))))  # days of the week
         
     return df
 
