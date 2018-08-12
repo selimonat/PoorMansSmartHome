@@ -29,8 +29,9 @@ def plot_log(df,cols="all",output_file=None,normalize=False):
 
     #plot columns except the time stamp column, and z-score transform if required.
     plt.close()
+    plt.figure(figsize=(6,6))
     for col in cols:
-        if np.all(np.isin(col,["time_sec","time_hour","time_day"])) == False:
+        if np.all(np.isin(col,["time_week","time_month","time_sec","time_hour","time_day"])) == False:
             if normalize is True:
                 df[col] = (df[col] - df[col].mean())/df[col].std(ddof=0)
             color = tuple(map(tuple,np.random.rand(1,3)))[0]
@@ -41,7 +42,7 @@ def plot_log(df,cols="all",output_file=None,normalize=False):
     ax.grid(which='major', axis='x', linestyle='--')
     if output_file is not None:
        print('will print something')
-       plt.savefig(output_file)
+       plt.savefig(output_file,dpi=100,transparent=True)
        plt.show()
 
 
