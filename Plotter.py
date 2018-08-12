@@ -29,7 +29,7 @@ def plot_log(df,cols="all",output_file=None,normalize=False):
 
     #plot columns except the time stamp column, and z-score transform if required.
     plt.close()
-    plt.figure(figsize=(6,6))
+    plt.figure(figsize=(4.5,4.5))
     for col in cols:
         if np.all(np.isin(col,["time_week","time_month","time_sec","time_hour","time_day"])) == False:
             if normalize is True:

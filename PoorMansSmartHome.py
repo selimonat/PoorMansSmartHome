@@ -16,6 +16,21 @@ class Home:
         """
         Exports a set of plots fom ikea, device and mic logs.
         """       
+        df = self.get_ikea_log()
+        df = pd.concat([df.filter(like="time_"),df.loc[:,[('65545','state')]]],axis=1)
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_all.png")
+        
+        df = df[df.time_month == (df.time_month.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_month.png")
+        
+        df = df[df.time_week == (df.time_week.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_week.png")
+        
+        df = df[df.time_day == (df.time_day.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_today.png")
+        
+
+
         df = self.get_device_log()
         pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_all.png")
         
@@ -27,7 +42,22 @@ class Home:
         
         df = df[df.time_day == (df.time_day.max())]
         pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_today.png")
+
+
+
+
         
+        df = self.get_mic_log()
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/mic_all.png",normalize=True)
+        
+        df = df[df.time_month == (df.time_month.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/mic_month.png",normalize=True)
+        
+        df = df[df.time_week == (df.time_week.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/mic_week.png",normalize=True)
+        
+        df = df[df.time_day == (df.time_day.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/mic_today.png",normalize=True)
         #df = self.get_ikea_log() 
         #cols = [2,5,8,11,14,17]
         #pl.plot_log(df,cols,"/tmp/ikea_lamp_state.png")      
