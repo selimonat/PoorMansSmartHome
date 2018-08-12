@@ -16,15 +16,24 @@ class Home:
         """
         Exports a set of plots fom ikea, device and mic logs.
         """       
-        df = self.get_ikea_log() 
-        cols = [2,5,8,11,14,17]
-        pl.plot_log(df,cols,"/tmp/ikea_lamp_state.png")      
-        
         df = self.get_device_log()
-        pl.plot_log(df,'all',"/tmp/device_log.png")
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_all.png")
         
-        df = self.get_mic_log()
-        pl.plot_log(df,'all',"/tmp/mic_log.png",normalize=True)
+        df = df[df.time_month == (df.time_month.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_month.png")
+        
+        df = df[df.time_week == (df.time_week.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_week.png")
+        
+        df = df[df.time_day == (df.time_day.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_today.png")
+        
+        #df = self.get_ikea_log() 
+        #cols = [2,5,8,11,14,17]
+        #pl.plot_log(df,cols,"/tmp/ikea_lamp_state.png")      
+        
+        #df = self.get_mic_log()
+        #pl.plot_log(df,'all',"/tmp/mic_log.png",normalize=True)
 
     def get_device_log(self):
         """
@@ -107,6 +116,8 @@ class Home:
 def AttributeAdd(df):
     
     df["time_hour"]   = list(df.time_sec.apply(lambda x: int(np.floor( (x / 3600)      % 24    ))))  # hours of the day
+    df["time_month"]    = list(df.time_sec.apply(lambda x: int(np.floor( (x / (3600*24*30))         ))))  # days of the week
+    df["time_week"]    = list(df.time_sec.apply(lambda x: int(np.floor( (x / (3600*24*7))         ))))  # days of the week
     df["time_day"]    = list(df.time_sec.apply(lambda x: int(np.floor( (x / (3600*24))         ))))  # days of the week
         
     return df
