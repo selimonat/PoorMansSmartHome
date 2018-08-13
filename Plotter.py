@@ -17,25 +17,26 @@ def plot_log(df,cols="all",output_file=None,normalize=False):
     maps all log values to either of the 24 possible hours.
     plots the average of log value in that bin.
     """
+    dft       = df.filter(like="time_")
+    df        = df.filter(regex="^((?!time_*).)*$")
+
     #bins to hours
-    t              = np.unique(df.time_hour)                        #possible hours
-    T              = np.bincount(list(df.time_hour))                      #total counts for each hour
+    t              = np.unique(dft.time_hour)                        #possible hours
+    T              = np.bincount(list(dft.time_hour))                      #total counts for each hour
     
     #take either all or selected columns
     if cols is "all":
         cols           = df.columns
     else:
         cols           = df.columns[cols]
-
     #plot columns except the time stamp column, and z-score transform if required.
     plt.close()
     plt.figure(figsize=(4.5,4.5))
     for col in cols:
-        if np.all(np.isin(col,["time_week","time_month","time_sec","time_hour","time_day"])) == False:
-            if normalize is True:
-                df[col] = (df[col] - df[col].mean())/df[col].std(ddof=0)
-            color = tuple(map(tuple,np.random.rand(1,3)))[0]
-            plt.plot(t,np.bincount(list(df.time_hour),df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
+        if normalize is True:
+            df[col] = (df[col] - df[col].mean())/df[col].std(ddof=0)
+        color = tuple(map(tuple,np.random.rand(1,3)))[0]
+        plt.plot(t,np.bincount(list(dft.time_hour),df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
     plt.legend(cols)
     plt.xticks(np.arange(min(t),max(t),3))
     ax = plt.gca()
