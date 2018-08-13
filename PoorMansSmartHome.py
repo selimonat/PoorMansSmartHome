@@ -17,6 +17,20 @@ class Home:
         Exports a set of plots fom ikea, device and mic logs.
         """       
         df = self.get_ikea_log()
+        df = pd.concat([df.filter(regex="brightness_*"), df.filter(regex="time_*")],axis=1)
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_all.png")
+        
+        df = df[df.time_month == (df.time_month.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_month.png")
+        
+        df = df[df.time_week == (df.time_week.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_week.png")
+        
+        df = df[df.time_day == (df.time_day.max())]
+        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_today.png")
+ 
+
+
         df = pd.concat([df.filter(like="time_"),df.loc[:,[('65545','state')]]],axis=1)
         pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_all.png")
         
@@ -28,9 +42,9 @@ class Home:
         
         df = df[df.time_day == (df.time_day.max())]
         pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_today.png")
+
+
         
-
-
         df = self.get_device_log()
         pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_all.png")
         
