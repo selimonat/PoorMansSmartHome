@@ -11,7 +11,10 @@ class Home:
         #self.log                 = {"device" : d,"human":[d]} 
         self.file_google_history = '/home/pi/MapHistory//Takeout/Location History/Location History.json'
         self.file_google_labels  = '/home/pi/MapHistory/Takeout/Maps/My labeled places/Labeled places.json'
-    
+        
+        self.length_device_log     = self.LogLength(self.file_device_log)
+        self.length_mic_log        = self.LogLength(self.file_mic_log)
+        self.length_ikea_log       = self.LogLength(self.file_ikea_log)
     def get_plots(self):
         """
         Exports a set of plots fom ikea, device and mic logs.
@@ -30,7 +33,7 @@ class Home:
         pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_today.png")
  
 
-
+        df = self.get_ikea_log()
         df = pd.concat([df.filter(like="time_"),df.loc[:,[('65545','state')]]],axis=1)
         pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_all.png")
         
@@ -79,20 +82,29 @@ class Home:
         #df = self.get_mic_log()
         #pl.plot_log(df,'all',"/tmp/mic_log.png",normalize=True)
 
-    def get_device_log(self):
+    def get_device_log(self,last_row=0):
         """
         Reads the device log by Logger.log_device()
         Adds a new column indicating the hour of the day.
+        Use rows to import only ROWS amount of lines from the tail of the log file.
+        1 would read only the last log item.
         """
-        d                        = pd.read_csv(self.file_device_log,delimiter=" ",names=["selim_laptop","sonja_laptop","selim_phone","sonja_phone","time_sec"],usecols=[1,2,3,4,6])
+        
+        if last_row != 0:
+            last_row = self.LogLength(self.file_device_log) - last_row #number of rows to be skipped.
+    
+        d                        = pd.read_csv(self.file_device_log,delimiter=" ",names=["selim_laptop","sonja_laptop","selim_phone","sonja_phone","time_sec"],usecols=[1,2,3,4,6],skiprows=last_row)
         d.time_sec               = d.time_sec.apply(lambda x: int(x[1:])) #remove the @ sign
         d                        = AttributeAdd(d)
         return d
-    def get_mic_log(self):
+    def get_mic_log(self,last_row=0):
         """
         reads mic log
         """
-        df          = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"])
+        if last_row != 0:
+            last_row = self.LogLength(self.file_mic_log) - last_row #number of rows to be skipped.
+
+        df          = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"],skiprows=last_row)
         df.time_sec = df.time_sec.astype('int64')
         df          = AttributeAdd(df)
         return df
@@ -125,11 +137,14 @@ class Home:
         df            = AttributeAdd(df)
         return df
     
-    def get_ikea_log(self):
+    def get_ikea_log(self, last_row=0):
         """
         Reads the lamp log.
         """
-        d = pd.read_csv(self.file_ikea_log,header=None,delimiter=" ",usecols=list(range(0,24)) + [31])
+        if last_row != 0:
+            last_row = self.LogLength(self.file_ikea_log) - last_row #number of rows to be skipped.
+        
+        d = pd.read_csv(self.file_ikea_log,header=None,delimiter=" ",usecols=list(range(0,24)) + [31],skiprows=last_row)
         d = d.astype(np.float64).values
     
         time      = d[:,-1]
@@ -156,6 +171,15 @@ class Home:
         i                  = df.time_sec.apply((lambda x,y: np.argmin(np.abs(x-y)) if (x>geo_start)&(x<geo_stop) else None),y=human.timestamp )
         df["at_home"] = human.at_home[i].values
         return df
+
+    def LogLength(self,filename):
+        '''
+        Returns number of lines in a filename
+        '''
+        with open(filename) as f:
+            for i, l in enumerate(f):
+                pass
+        return i+1
 
 def AttributeAdd(df):
     
