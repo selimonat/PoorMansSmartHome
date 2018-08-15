@@ -180,6 +180,26 @@ class Home:
             for i, l in enumerate(f):
                 pass
         return i+1
+    def CurrentState(self):
+        '''
+        Returns the latest states of devices.
+        '''
+        out = dict()
+        df    = self.get_device_log(last_row=1)
+        out["device"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
+        
+        df    = self.get_mic_log(last_row=1)
+        out["mic"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
+
+        df    = self.get_ikea_log(last_row=1)
+        df    = df.filter(regex="state")      
+        df.columns = df.columns.get_level_values(0)
+   
+        out["light"] = df.to_dict(orient='list')
+      
+        return out
+
+
 
 def AttributeAdd(df):
     
