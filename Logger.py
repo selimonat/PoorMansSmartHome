@@ -26,7 +26,7 @@ def log_motion():
     gpCam.sendCamera(constants.Hero3Commands.PHOTO_RESOLUTION,constants.Hero3Commands.PhotoResolution.PR5MP_W)
     
     save_path = "/home/pi/motion_detection/%s.jpg"
-    tmp_path  = "/tmp/%s.JPG"
+    tmp_path  = "/home/pi/code/python/homeserver/static/%s.JPG"
     #take two pictures in 10 seconds, save them as /tmp/{0,1}.jpg
     filename = [None];
     for i in [0, 1]:
@@ -48,19 +48,20 @@ def log_motion():
     #compute the absolute diffference between two images
     print("Computing motion power")
     out = abs(out);
+
     print("Smoothing motion power")
     out = cv2.GaussianBlur(out,(61,61),25)
+    motion_power = np.amax(out)
     #out = out/np.amax(out)
     #out = out*255
-    print("Saving diff image")
-    filename.append(save_path % (str(round(time.time()))))
-    cv2.imwrite(filename[-1],np.uint8(out),[int(cv2.IMWRITE_JPEG_QUALITY), 10])
+
+    #print("Saving diff image")
+    #filename.append(save_path % (str(round(time.time()))))
+    #cv2.imwrite(filename[-1],np.uint8(out),[int(cv2.IMWRITE_JPEG_QUALITY), 10])
     
-    motion_power = np.amax(out)
     print("Motion Value: %s" % (motion_power))
     #log motion power with time stamp
     out = str(motion_power) + " " + str(time.strftime("%a %d %b %H:%M:%S CET %Y")) + " " + str(round(time.time()))
-    print(out)
     logging.info(out)
 
     #print("Montage collected data")

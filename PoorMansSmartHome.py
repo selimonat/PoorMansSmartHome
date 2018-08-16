@@ -6,6 +6,7 @@ class Home:
     def __init__(self):
         self.file_device_log     = "/home/pi/device_presence.log" 
         self.file_human_presence = "/home/pi/human_presence.log" 
+        self.file_motion_log     = "/home/pi/motion_detection.log" 
         self.file_mic_log        = "/home/pi/mic.log" 
         self.file_ikea_log       = "/home/pi/ikea_lamps.log" 
         #self.log                 = {"device" : d,"human":[d]} 
@@ -97,6 +98,18 @@ class Home:
         d.time_sec               = d.time_sec.apply(lambda x: int(x[1:])) #remove the @ sign
         d                        = AttributeAdd(d)
         return d
+
+    def get_motion_log(self,last_row=0):
+        """
+        reads motion log.
+        """
+        if last_row != 0:
+            last_row = self.LogLength(self.file_motion_log) - last_row #number of rows to be skipped.
+        
+        df = pd.read_csv(self.file_motion_log,header=None,delimiter=' ',usecols=[0,7],names=["motion","time_sec"],skiprows=last_row)
+        df.time_sec = df.time_sec.astype('int64')
+        df          = AttributeAdd(df)
+        return df
     def get_mic_log(self,last_row=0):
         """
         reads mic log
@@ -180,6 +193,7 @@ class Home:
             for i, l in enumerate(f):
                 pass
         return i+1
+
     def CurrentState(self):
         '''
         Returns the latest states of devices.
@@ -196,7 +210,10 @@ class Home:
         df.columns = df.columns.get_level_values(0)
    
         out["light"] = df.to_dict(orient='list')
-      
+
+        df            = self.get_motion_log(last_row=1)
+        out["motion"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
+        
         return out
 
 
