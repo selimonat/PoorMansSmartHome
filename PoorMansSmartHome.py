@@ -16,72 +16,14 @@ class Home:
         self.length_device_log     = self.LogLength(self.file_device_log)
         self.length_mic_log        = self.LogLength(self.file_mic_log)
         self.length_ikea_log       = self.LogLength(self.file_ikea_log)
-    def get_plots(self):
+    def get_plot(self):
         """
         Exports a set of plots fom ikea, device and mic logs.
         """       
-        df = self.get_ikea_log()
-        df = pd.concat([df.filter(regex="brightness_*"), df.filter(regex="time_*")],axis=1)
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_all.png")
-        
-        df = df[df.time_month == (df.time_month.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_month.png")
-        
-        df = df[df.time_week == (df.time_week.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_week.png")
-        
-        df = df[df.time_day == (df.time_day.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/light_today.png")
- 
-
-        df = self.get_ikea_log()
-        df = pd.concat([df.filter(like="time_"),df.loc[:,[('65545','state')]]],axis=1)
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_all.png")
-        
-        df = df[df.time_month == (df.time_month.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_month.png")
-        
-        df = df[df.time_week == (df.time_week.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_week.png")
-        
-        df = df[df.time_day == (df.time_day.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/motion_today.png")
-
-
-        
         df = self.get_device_log()
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_all.png")
-        
-        df = df[df.time_month == (df.time_month.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_month.png")
-        
-        df = df[df.time_week == (df.time_week.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_week.png")
-        
-        df = df[df.time_day == (df.time_day.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/device_today.png")
-
-
-
-
-        
-        df = self.get_mic_log()
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/mic_all.png",normalize=True)
-        
-        df = df[df.time_month == (df.time_month.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/mic_month.png",normalize=True)
-        
-        df = df[df.time_week == (df.time_week.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/mic_week.png",normalize=True)
-        
-        df = df[df.time_day == (df.time_day.max())]
-        pl.plot_log(df,'all',output_file="/home/pi/code/python/homeserver/static/mic_today.png",normalize=True)
-        #df = self.get_ikea_log() 
-        #cols = [2,5,8,11,14,17]
-        #pl.plot_log(df,cols,"/tmp/ikea_lamp_state.png")      
-        
-        #df = self.get_mic_log()
-        #pl.plot_log(df,'all',"/tmp/mic_log.png",normalize=True)
+        h  = pl.df_to_histogram(df)
+        script,div = pl.histogram_to_plot(h)
+        return script,div    
 
     def get_device_log(self,last_row=0):
         """
@@ -214,6 +156,7 @@ class Home:
         df            = self.get_motion_log(last_row=1)
         out["motion"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
         
+        out["file"] = {"home_visual":"0.JPG","motion_energy" : "motion_energy.JPG"}  
         return out
 
 
