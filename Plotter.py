@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import zscore
 
+from bokeh.plotting import figure, output_file, show 
+from bokeh.embed import components
+
 def plot_log_shaded(df):
     '''
         Plots log
@@ -11,11 +14,9 @@ def plot_log_shaded(df):
     #for g in df.groupby(['days']):
     #    plot(
 
-def plot_log(df,cols="all",output_file=None,normalize=False):
+def df_to_histogram(df,cols="all",normalize=False):
     """
-    plots the log and optinally saves the figure. 
-    maps all log values to either of the 24 possible hours.
-    plots the average of log value in that bin.
+    counts average state of device in DF for each hour of day.
     """
     dft       = df.filter(like="time_")
     df        = df.filter(regex="^((?!time_*).)*$")
@@ -29,14 +30,44 @@ def plot_log(df,cols="all",output_file=None,normalize=False):
         cols           = df.columns
     else:
         cols           = df.columns[cols]
-    #plot columns except the time stamp column, and z-score transform if required.
-    plt.close()
-    plt.figure(figsize=(4.5,4.5))
+    #for each column compute histogram
+    h = dict()
     for col in cols:
         if normalize is True:
             df[col] = (df[col] - df[col].mean())/df[col].std(ddof=0)
-        color = tuple(map(tuple,np.random.rand(1,3)))[0]
-        plt.plot(t,np.bincount(list(dft.time_hour),df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
+        h.update({col:{"x":t,"y":np.bincount(list(dft.time_hour),df[col])/T}})
+    return h
+
+def histogram_to_plot(h):
+    """
+        plots the histogram, returns JS script and html div tag to be 
+        inserted in the html file
+    """
+    title = 'y = f(x)'
+
+    plot = figure(title= title , 
+        x_axis_label= 'X-Axis', 
+        y_axis_label= 'Y-Axis', 
+        plot_width =400,
+        plot_height =400)
+    for k,v in h.items():
+        plot.line(v["x"], v["y"], legend= 'f(x)', line_width = 2)
+    #Store components 
+    script, div = components(plot)
+    return script, div
+   
+
+def plot_log(df,cols="all",output_file=None,normalize=False):
+    """
+    plots the log and optinally saves the figure. 
+    maps all log values to either of the 24 possible hours.
+    plots the average of log value in that bin.
+    """
+   #plot columns except the time stamp column, and z-score transform if required.
+    plt.close()
+    plt.figure(figsize=(4.5,4.5))
+    color = tuple(map(tuple,np.random.rand(1,3)))[0]
+    plt.plot(t,np.bincount(list(dft.time_hour),df[col])/T ,'.-',markersize=10)   #proportion of counts where device is active.
     plt.legend(cols)
     plt.xticks(np.arange(min(t),max(t),3))
     ax = plt.gca()
