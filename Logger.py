@@ -25,12 +25,11 @@ def log_motion():
     gpCam = GoProCamera.GoPro(constants.auth)
     gpCam.sendCamera(constants.Hero3Commands.PHOTO_RESOLUTION,constants.Hero3Commands.PhotoResolution.PR5MP_W)
     
-    save_path = "/home/pi/motion_detection/%s.jpg"
-    tmp_path  = "/home/pi/code/python/homeserver/static/%s.JPG"
+    save_path = "/home/pi/code/python/homeserver/static/%s.JPG"
     #take two pictures in 10 seconds, save them as /tmp/{0,1}.jpg
     filename = [None];
     for i in [0, 1]:
-        filename.append(tmp_path % (i))
+        filename.append(save_path % (i))
         print("Taking photo %d called %s" % (i, filename[-1]))
         gpCam.take_photo()
         time.sleep(2)
@@ -38,13 +37,13 @@ def log_motion():
         gpCam.downloadLastMedia(custom_filename=str(filename[-1]))
         print("Reading photo %d" % i)
         img = np.float32(cv2.imread(filename[-1],cv2.IMREAD_GRAYSCALE))
+        #print("Zscoring photo %d" % i)
+        #img = (img-np.mean(img))/np.std(img)
         if i == 0:
             out = img
         else:
             out = out - img
-        print(out)
-        print(np.shape(out))
-        time.sleep(10)
+        time.sleep(3)
     #compute the absolute diffference between two images
     print("Computing motion power")
     out = abs(out);
@@ -52,12 +51,12 @@ def log_motion():
     print("Smoothing motion power")
     out = cv2.GaussianBlur(out,(61,61),25)
     motion_power = np.amax(out)
-    #out = out/np.amax(out)
-    #out = out*255
+    out = out/np.amax(out)
+    out = out*255
 
-    #print("Saving diff image")
-    #filename.append(save_path % (str(round(time.time()))))
-    #cv2.imwrite(filename[-1],np.uint8(out),[int(cv2.IMWRITE_JPEG_QUALITY), 10])
+    print("Saving diff image")
+    filename.append(save_path % "motion_energy")
+    cv2.imwrite(filename[-1],np.uint8(out),[int(cv2.IMWRITE_JPEG_QUALITY), 10])
     
     print("Motion Value: %s" % (motion_power))
     #log motion power with time stamp
