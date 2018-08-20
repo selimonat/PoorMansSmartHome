@@ -8,22 +8,30 @@ class Home:
         self.file_human_presence = "/home/pi/human_presence.log" 
         self.file_motion_log     = "/home/pi/motion_detection.log" 
         self.file_mic_log        = "/home/pi/mic.log" 
-        self.file_ikea_log       = "/home/pi/ikea_lamps.log" 
+        self.file_light_log       = "/home/pi/ikea_lamps.log" 
         #self.log                 = {"device" : d,"human":[d]} 
         self.file_google_history = '/home/pi/MapHistory//Takeout/Location History/Location History.json'
         self.file_google_labels  = '/home/pi/MapHistory/Takeout/Maps/My labeled places/Labeled places.json'
         
         self.length_device_log     = self.LogLength(self.file_device_log)
         self.length_mic_log        = self.LogLength(self.file_mic_log)
-        self.length_ikea_log       = self.LogLength(self.file_ikea_log)
-    def get_plot(self):
+        self.length_light_log       = self.LogLength(self.file_light_log)
+    def get_log(self,log_name):
         """
-        Exports a set of plots fom ikea, device and mic logs.
+        Gets the log file of various sources.
+        """
+        method_name = 'get_' + str(log_name) + '_log'
+        method = getattr(self, method_name, lambda: "Invalid log name")
+        return method()
+
+    def get_plot(self,log_name):
+        """
+        Exports a set of plots fom light, device and mic logs.
         """       
-        df = self.get_device_log()
-        h  = pl.df_to_histogram(df)
-        script,div = pl.histogram_to_plot(h)
-        return script,div    
+        script_div = ()
+        df = self.get_log(log_name)                        
+        script,div = zip(*[pl.df_to_plot(df[df[col] == df[col].max()]) for col in ["time_month", "time_week", "time_day"]])
+        return script,div
 
     def get_device_log(self,last_row=0):
         """
@@ -92,14 +100,14 @@ class Home:
         df            = AttributeAdd(df)
         return df
     
-    def get_ikea_log(self, last_row=0):
+    def get_light_log(self, last_row=0):
         """
         Reads the lamp log.
         """
         if last_row != 0:
-            last_row = self.LogLength(self.file_ikea_log) - last_row #number of rows to be skipped.
+            last_row = self.LogLength(self.file_light_log) - last_row #number of rows to be skipped.
         
-        d = pd.read_csv(self.file_ikea_log,header=None,delimiter=" ",usecols=list(range(0,24)) + [31],skiprows=last_row)
+        d = pd.read_csv(self.file_light_log,header=None,delimiter=" ",usecols=list(range(0,24)) + [31],skiprows=last_row)
         d = d.astype(np.float64).values
     
         time      = d[:,-1]
@@ -147,7 +155,7 @@ class Home:
         df    = self.get_mic_log(last_row=1)
         out["mic"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
 
-        df    = self.get_ikea_log(last_row=1)
+        df    = self.get_light_log(last_row=1)
         df    = df.filter(regex="state")      
         df.columns = df.columns.get_level_values(0)
    
