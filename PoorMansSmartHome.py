@@ -30,7 +30,9 @@ class Home:
         """       
         script_div = ()
         df = self.get_log(log_name)                        
-        script,div = zip(*[pl.df_to_plot(df[df[col] == df[col].max()]) for col in ["time_month", "time_week", "time_day"]])
+        P = [pl.df_to_histogram(df[df[col] == df[col].max()]) for col in ["time_day", "time_week", "time_month"]]
+        P.append(pl.df_to_histogram(df))
+        script,div = pl.histogram_to_plot((tuple(P)))
         return script,div
 
     def get_device_log(self,last_row=0):
