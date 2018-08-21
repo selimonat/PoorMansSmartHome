@@ -73,6 +73,28 @@ class Home:
         df.time_sec = df.time_sec.astype('int64')
         df          = AttributeAdd(df)
         return df
+    def get_light_log(self, last_row=0):
+        """
+        Reads the lamp log.
+        """
+        if last_row != 0:
+            last_row = self.LogLength(self.file_light_log) - last_row #number of rows to be skipped.
+        
+        d = pd.read_csv(self.file_light_log,header=None,delimiter=" ",usecols=list(range(0,24)) + [31],skiprows=last_row)
+        d = d.astype(np.float64).values
+    
+        time      = d[:,-1]
+        time_bin  = np.int8(np.floor((time % (60*60*24))/(60*60)))  #time bin
+        lamps     = np.unique(d[:,list(range(0,21,4))])
+        lampdata = dict()
+        for lamp in lamps:
+            i                   = d == lamp
+            dummy               = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
+            lampdata[str(int(lamp))] = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,]})
+        lamp_df = pd.concat(lampdata,axis=1)
+        lamp_df["time_sec"] = time
+        lamp_df = AttributeAdd(lamp_df)
+        return lamp_df
     def get_location_history(self,delta=(0.001,0.002)):
         '''
             Computes a binary home presence vector based on data logged in google map and 
@@ -102,28 +124,6 @@ class Home:
         df            = AttributeAdd(df)
         return df
     
-    def get_light_log(self, last_row=0):
-        """
-        Reads the lamp log.
-        """
-        if last_row != 0:
-            last_row = self.LogLength(self.file_light_log) - last_row #number of rows to be skipped.
-        
-        d = pd.read_csv(self.file_light_log,header=None,delimiter=" ",usecols=list(range(0,24)) + [31],skiprows=last_row)
-        d = d.astype(np.float64).values
-    
-        time      = d[:,-1]
-        time_bin  = np.int8(np.floor((time % (60*60*24))/(60*60)))  #time bin
-        lamps     = np.unique(d[:,list(range(0,21,4))])
-        lampdata = dict()
-        for lamp in lamps:
-            i                   = d == lamp
-            dummy               = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
-            lampdata[str(int(lamp))] = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,]})
-        lamp_df = pd.concat(lampdata,axis=1)
-        lamp_df["time_sec"] = time
-        lamp_df = AttributeAdd(lamp_df)
-        return lamp_df
     
     def at_home(self,df):
         '''
@@ -146,24 +146,24 @@ class Home:
                 pass
         return i+1
 
-    def CurrentState(self):
+    def CurrentState(self,last_row=1):
         '''
         Returns the latest states of devices.
         '''
         out = dict()
-        df    = self.get_device_log(last_row=1)
+        df    = self.get_device_log(last_row=last_row)
         out["device"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
         
-        df    = self.get_mic_log(last_row=1)
+        df    = self.get_mic_log(last_row=last_row)
         out["mic"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
 
-        df    = self.get_light_log(last_row=1)
+        df    = self.get_light_log(last_row=last_row)
         df    = df.filter(regex="state")      
         df.columns = df.columns.get_level_values(0)
    
         out["light"] = df.to_dict(orient='list')
 
-        df            = self.get_motion_log(last_row=1)
+        df            = self.get_motion_log(last_row=last_row)
         out["motion"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
         
         out["file"] = {"home_visual":"0.JPG","motion_energy" : "motion_energy.JPG"}  
