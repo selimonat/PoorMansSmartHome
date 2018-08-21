@@ -156,6 +156,28 @@ class Home:
                 pass
         return i+1
 
+    def CurrentState_as_df(self,last_row=1):
+        '''
+        Returns the latest states of devices.
+        '''
+        out = list()
+        df  = self.get_device_log(last_row=last_row)
+        out.append(df)
+        
+        df    = self.get_mic_log(last_row=last_row)
+        out.append(df)
+
+        df    = self.get_light_log(last_row=last_row)
+        df    = df.filter(regex="state|time_*")      
+        df.columns = df.columns.get_level_values(0)
+   
+        out.append(df)
+
+        df            = self.get_motion_log(last_row=last_row)
+        out.append(df)
+        
+        return merge_log(out)
+
     def CurrentState(self,last_row=1):
         '''
         Returns the latest states of devices.
@@ -190,17 +212,21 @@ def AttributeAdd(df):
         
     return df
 
-def merge_log(log1,log2,res=60):
+def merge_log(log,res=60):
     """
-        Aligns two dataframes at a resolution of RES.
+        Aligns list of dataframes in log at a resolution of RES.
         Uses epoch time columns of both DataFrames
         Default resolution is in minutes, all data in the same minute
         after epoch time is considered to belong together and merged.
     """
-    log1["merger"] = log1.time_sec.apply(lambda x:x//res) 
-    log2["merger"] = log2.time_sec.apply(lambda x:x//res) 
-    
-    return pd.merge( log1 , log2 , on = ['merger'] )
+    df0           = log[0]
+    df0["merger"] = df0.time_sec.apply(lambda x:x//res) 
+    df0           = df0.filter(regex="^((?!time_*).)*$")
+    for df in log[1:]:
+        df["merger"] = df.time_sec.apply(lambda x:x//res) 
+        df           = df.filter(regex="^((?!time_*).)*$")
+        df0          = pd.merge(df0,  df ,  on = ['merger'] )
+    return df0
        
 def EpochConverter(serie,to):
     """
