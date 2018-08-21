@@ -36,13 +36,15 @@ def log_motion():
         print("Downloading photo %d" % i)
         gpCam.downloadLastMedia(custom_filename=str(filename[-1]))
         print("Reading photo %d" % i)
-        img = np.float32(cv2.imread(filename[-1],cv2.IMREAD_GRAYSCALE))
+        img = cv2.imread(filename[-1],cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img,None,fx=.25,fy=.25,interpolation=cv2.INTER_AREA)
+        cv2.imwrite(filename[-1],np.uint8(img),[int(cv2.IMWRITE_JPEG_QUALITY), 10])
         #print("Zscoring photo %d" % i)
         #img = (img-np.mean(img))/np.std(img)
         if i == 0:
-            out = img
+            out = np.float32(img)
         else:
-            out = out - img
+            out  = out - img
         time.sleep(3)
     #compute the absolute diffference between two images
     print("Computing motion power")
