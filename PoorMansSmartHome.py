@@ -68,10 +68,20 @@ class Home:
         """
         if last_row != 0:
             last_row = self.LogLength(self.file_mic_log) - last_row #number of rows to be skipped.
-
-        df          = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"],skiprows=last_row)
-        df.time_sec = df.time_sec.astype('int64')
-        df          = AttributeAdd(df)
+        #load log file
+        df             = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"],skiprows=last_row)
+        #remove zero freq, not interesting
+        df             = df.drop('freq_0',axis=1)
+        #collapse power across frequencies
+        data_cols      = df.filter(like='freq_').columns
+        df["power"]    = df[data_cols].sum(axis=1)
+        #zscore transformation on power (causes an obvious problem when only one row is asked for)
+        #df["power"]  = df["power"].apply(lambda x: (x-np.mean(x))/np.std(x))
+        #remove all freq channels
+        df             =  df.drop(data_cols,axis=1)
+        #add time_ attributes
+        df.time_sec    = df.time_sec.astype('int64')
+        df             = AttributeAdd(df)
         return df
     def get_light_log(self, last_row=0):
         """
