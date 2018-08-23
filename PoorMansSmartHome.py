@@ -30,7 +30,7 @@ class Home:
         """       
         script_div = ()
         df = self.get_log(log_name)                        
-        P = [pl.df_to_histogram(df[df[col] == df[col].max()]) for col in ["time_day", "time_week", "time_month"]]
+        P = [pl.df_to_histogram(df[df[col] == df[col].max()]) for col in ["day", "week", "month"]]
         P.append(pl.df_to_histogram(df))
         script,div = pl.histogram_to_plot((tuple(P)))
         return script,div
@@ -46,9 +46,10 @@ class Home:
         if last_row != 0:
             last_row = self.LogLength(self.file_device_log) - last_row #number of rows to be skipped.
     
-        d                        = pd.read_csv(self.file_device_log,delimiter=" ",names=["selim_laptop","sonja_laptop","selim_phone","sonja_phone","time_sec"],usecols=[1,2,3,4,6],skiprows=last_row)
-        d.time_sec               = d.time_sec.apply(lambda x: int(x[1:])) #remove the @ sign
-        d                        = AttributeAdd(d)
+        d                        = pd.read_csv(self.file_device_log,delimiter=" ",names=["selim_laptop","sonja_laptop","selim_phone","sonja_phone","second"],usecols=[1,2,3,4,6],skiprows=last_row)
+        d.second               = d.second.apply(lambda x: int(x[1:])) #remove the @ sign
+        d                        = add_index_attribute(d)
+        d.columns				 = pd.MultiIndex.from_product([['device_presence'],d.columns,['state']],names=["log_type","source","attribute"])
         return d
 
     def get_motion_log(self,last_row=0):
@@ -58,9 +59,10 @@ class Home:
         if last_row != 0:
             last_row = self.LogLength(self.file_motion_log) - last_row #number of rows to be skipped.
         
-        df = pd.read_csv(self.file_motion_log,header=None,delimiter=' ',usecols=[0,7],names=["motion","time_sec"],skiprows=last_row)
-        df.time_sec = df.time_sec.astype('int64')
-        df          = AttributeAdd(df)
+        df = pd.read_csv(self.file_motion_log,header=None,delimiter=' ',usecols=[0,7],names=["motion","second"],skiprows=last_row)
+        df.second = df.second.astype('int64')
+        df          = add_index_attribute(df)
+        df.columns				 = pd.MultiIndex.from_product([['motion'],df.columns,['state']],names=["log_type","source","attribute"])
         return df
     def get_mic_log(self,last_row=0):
         """
@@ -69,7 +71,7 @@ class Home:
         if last_row != 0:
             last_row = self.LogLength(self.file_mic_log) - last_row #number of rows to be skipped.
         #load log file
-        df             = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["time_sec"],skiprows=last_row)
+        df             = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["second"],skiprows=last_row)
         #remove zero freq, not interesting
         df             = df.drop('freq_0',axis=1)
         #collapse power across frequencies
@@ -80,8 +82,9 @@ class Home:
         #remove all freq channels
         df             =  df.drop(data_cols,axis=1)
         #add time_ attributes
-        df.time_sec    = df.time_sec.astype('int64')
-        df             = AttributeAdd(df)
+        df.second    = df.second.astype('int64')
+        df             = add_index_attribute(df)
+        df.columns				 = pd.MultiIndex.from_product([['mic'],df.columns,['state']],names=["log_type","source","attribute"])
         return df
     def get_light_log(self, last_row=0):
         """
@@ -96,14 +99,18 @@ class Home:
         time      = d[:,-1]
         time_bin  = np.int8(np.floor((time % (60*60*24))/(60*60)))  #time bin
         lamps     = np.unique(d[:,list(range(0,21,4))])
-        lampdata = dict()
+        #lampdata = dict()
+        lampdata = [];
         for lamp in lamps:
             i                   = d == lamp
             dummy               = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
-            lampdata[str(int(lamp))] = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,]})
+            df                  = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,].astype(np.int),"second":time})
+            df.second           = df.second.astype('int64')
+            df                  = add_index_attribute(df)
+            df.columns          = pd.MultiIndex.from_product([ ["light"],[str(int(lamp))],df.columns],names=["log_type","source","attribute"])            
+            lampdata.append(df)
+                                                      #columns = pd.MultiIndex.from_product([["light"],["source"],["b","h","s"]],names=["log_type","source","attributes"]))
         lamp_df = pd.concat(lampdata,axis=1)
-        lamp_df["time_sec"] = time
-        lamp_df = AttributeAdd(lamp_df)
         return lamp_df
     def get_location_history(self,delta=(0.001,0.002)):
         '''
@@ -131,7 +138,7 @@ class Home:
         
         #compute binary state vector of home presence.
         df["at_home"] = (df.latitude > home_latitude-delta[0]) & (df.latitude < home_latitude+delta[0]) & (df.longitude > home_longitude-delta[0]) & (df.longitude < home_longitude+delta[0])
-        df            = AttributeAdd(df)
+        df            = add_index_attribute(df)
         return df
     
     
@@ -143,7 +150,7 @@ class Home:
         human              = self.get_location_history() 
         geo_start,geo_stop = human.timestamp.min(), human.timestamp.max()
         
-        i                  = df.time_sec.apply((lambda x,y: np.argmin(np.abs(x-y)) if (x>geo_start)&(x<geo_stop) else None),y=human.timestamp )
+        i                  = df.second.apply((lambda x,y: np.argmin(np.abs(x-y)) if (x>geo_start)&(x<geo_stop) else None),y=human.timestamp )
         df["at_home"] = human.at_home[i].values
         return df
 
@@ -203,14 +210,35 @@ class Home:
 
 
 
-def AttributeAdd(df):
+def add_index_attribute(df):
     
-    df["time_hour"]   = list(df.time_sec.apply(lambda x: int(np.floor( (x / 3600)      % 24    ))))  # hours of the day
-    df["time_month"]    = list(df.time_sec.apply(lambda x: int(np.floor( (x / (3600*24*30))         ))))  # days of the week
-    df["time_week"]    = list(df.time_sec.apply(lambda x: int(np.floor( (x / (3600*24*7))         ))))  # days of the week
-    df["time_day"]    = list(df.time_sec.apply(lambda x: int(np.floor( (x / (3600*24))         ))))  # days of the week
+    df["hour"]   = list(df.second.apply(lambda x: int(np.floor( (x / 3600)      % 24    ))))  # hours of the day
+    df["month"]    = list(df.second.apply(lambda x: int(np.floor( (x / (3600*24*30))         ))))  # days of the week
+    df["week"]    = list(df.second.apply(lambda x: int(np.floor( (x / (3600*24*7))         ))))  # days of the week
+    df["day"]    = list(df.second.apply(lambda x: int(np.floor( (x / (3600*24))         ))))  # days of the week
+    df.set_index(["second","hour","month","week","day"],inplace=True)
         
     return df
+
+def tuplekey_to_nested(d):
+	"""
+		takes a dict with keys defined as tuples and returns
+		a dict with nested keys.
+	"""
+
+	D = dict()
+	S = list(set(map(len,d.keys())))
+	if 1 not in S:
+		for k,v in d.items():
+			if k[0:-1] not in D.keys():
+				D[k[0:-1]] = {k[-1] : v }
+			else:
+				D[k[0:-1]].update({k[-1] : v })
+				return tuplekey_to_nested(D)
+	else:
+		return d
+
+
 
 def merge_log(log,res=60):
     """
@@ -220,10 +248,10 @@ def merge_log(log,res=60):
         after epoch time is considered to belong together and merged.
     """
     df0           = log[0]
-    df0["merger"] = df0.time_sec.apply(lambda x:x//res) 
+    df0["merger"] = df0.second.apply(lambda x:x//res) 
     df0           = df0.filter(regex="^((?!time_*).)*$")
     for df in log[1:]:
-        df["merger"] = df.time_sec.apply(lambda x:x//res) 
+        df["merger"] = df.second.apply(lambda x:x//res) 
         df           = df.filter(regex="^((?!time_*).)*$")
         df0          = pd.merge(df0,  df ,  on = ['merger'] )
     return df0
