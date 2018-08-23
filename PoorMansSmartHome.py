@@ -175,9 +175,6 @@ class Home:
         out.append(df)
 
         df    = self.get_light_log(last_row=last_row)
-        df    = df.filter(regex="state|time_*")      
-        df.columns = df.columns.get_level_values(0)
-   
         out.append(df)
 
         df            = self.get_motion_log(last_row=last_row)
@@ -248,12 +245,14 @@ def merge_log(log,res=60):
         after epoch time is considered to belong together and merged.
     """
     df0           = log[0]
-    df0["merger"] = df0.second.apply(lambda x:x//res) 
-    df0           = df0.filter(regex="^((?!time_*).)*$")
+    df0["merger"] = list(df0.index.get_level_values("second").to_series().apply(lambda x:x//res))
+    #df0           = df0.filter(regex="^((?!time_*).)*$")
     for df in log[1:]:
-        df["merger"] = df.second.apply(lambda x:x//res) 
-        df           = df.filter(regex="^((?!time_*).)*$")
-        df0          = pd.merge(df0,  df ,  on = ['merger'] )
+        #df["merger"] = df.second.apply(lambda x:x//res) 
+        df["merger"] = list(df.index.get_level_values("second").to_series().apply(lambda x:x//res))
+        df0 = df0.reset_index().merge(df,on=["merger"]).set_index("merger")
+        print(df)
+        print(df0)
     return df0
        
 def EpochConverter(serie,to):
