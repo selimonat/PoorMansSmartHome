@@ -49,7 +49,7 @@ class Home:
         d                        = pd.read_csv(self.file_device_log,delimiter=" ",names=["selim_laptop","sonja_laptop","selim_phone","sonja_phone","second"],usecols=[1,2,3,4,6],skiprows=last_row)
         d.second               = d.second.apply(lambda x: int(x[1:])) #remove the @ sign
         d                        = add_index_attribute(d)
-        d.columns				 = pd.MultiIndex.from_product([['device_presence'],d.columns,['state']],names=["log_type","source","attribute"])
+        d.columns                = pd.MultiIndex.from_product([['device_presence'],d.columns,['state']],names=["log_type","source","attribute"])
         return d
 
     def get_motion_log(self,last_row=0):
@@ -62,7 +62,7 @@ class Home:
         df = pd.read_csv(self.file_motion_log,header=None,delimiter=' ',usecols=[0,7],names=["motion","second"],skiprows=last_row)
         df.second = df.second.astype('int64')
         df          = add_index_attribute(df)
-        df.columns				 = pd.MultiIndex.from_product([['motion'],df.columns,['state']],names=["log_type","source","attribute"])
+        df.columns               = pd.MultiIndex.from_product([['motion'],df.columns,['state']],names=["log_type","source","attribute"])
         return df
     def get_mic_log(self,last_row=0):
         """
@@ -84,7 +84,7 @@ class Home:
         #add time_ attributes
         df.second    = df.second.astype('int64')
         df             = add_index_attribute(df)
-        df.columns				 = pd.MultiIndex.from_product([['mic'],df.columns,['state']],names=["log_type","source","attribute"])
+        df.columns               = pd.MultiIndex.from_product([['mic'],df.columns,['state']],names=["log_type","source","attribute"])
         return df
     def get_light_log(self, last_row=0):
         """
@@ -218,22 +218,24 @@ def add_index_attribute(df):
     return df
 
 def tuplekey_to_nested(d):
-	"""
-		takes a dict with keys defined as tuples and returns
-		a dict with nested keys.
-	"""
-
-	D = dict()
-	S = list(set(map(len,d.keys())))
-	if 1 not in S:
-		for k,v in d.items():
-			if k[0:-1] not in D.keys():
-				D[k[0:-1]] = {k[-1] : v }
-			else:
-				D[k[0:-1]].update({k[-1] : v })
-				return tuplekey_to_nested(D)
-	else:
-		return d
+    """
+        takes a dict with keys defined as tuples and returns
+        a dict with nested keys.
+    """
+    print("=======================\n")
+    D = dict()
+    S = list(set(map(len,d.keys())))
+    if 1 not in S:                              #check whether the size of the tuple key is one
+        for k,v in d.items():  
+            key_above = k[0:-1]
+            key_below = k[-1]                 #run across the MultiIndex
+            if key_above not in D:         #create a tuple key based on all keys except the last one.
+                D[key_above] = {key_below : v }
+            else:       
+                D[key_above].update({key_below : v }) 
+        return tuplekey_to_nested(D)            #continue doing the same until there is a tuple of size 1 as a key
+    else:
+        return d
 
 
 
@@ -250,11 +252,9 @@ def merge_log(log,res=60):
     for df in log[1:]:
         #df["merger"] = df.second.apply(lambda x:x//res) 
         df["merger"] = list(df.index.get_level_values("second").to_series().apply(lambda x:x//res))
-        df0 = df0.reset_index().merge(df,on=["merger"]).set_index("merger")
-        print(df)
-        print(df0)
+        df0 = df0.merge(df,on=["merger"])
+    df0.set_index("merger",inplace=True) 
     return df0
-       
 def EpochConverter(serie,to):
     """
     Converts linux epoch time to TO.
