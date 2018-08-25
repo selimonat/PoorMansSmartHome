@@ -46,6 +46,7 @@ def log_motion():
         else:
             out  = out - img
         time.sleep(3)
+    gpCam.delete("all")
     #compute the absolute diffference between two images
     print("Computing motion power")
     out = abs(out);
