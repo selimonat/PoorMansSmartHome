@@ -222,21 +222,29 @@ def tuplekey_to_nested(d):
         takes a dict with keys defined as tuples and returns
         a dict with nested keys.
     """
-    print("=======================\n")
+    #print("=======================\n")
     D = dict()
     S = list(set(map(len,d.keys())))
     if 1 not in S:                              #check whether the size of the tuple key is one
         for k,v in d.items():  
             key_above = k[0:-1]
             key_below = k[-1]                 #run across the MultiIndex
+            #print(key_above)
+            #print(key_below)
             if key_above not in D:         #create a tuple key based on all keys except the last one.
                 D[key_above] = {key_below : v }
             else:       
                 D[key_above].update({key_below : v }) 
         return tuplekey_to_nested(D)            #continue doing the same until there is a tuple of size 1 as a key
     else:
+        #for a reason I dont quiet understand the last iteration always creates
+        #a tuple instead of a string. the bla variable takes care of it until I
+        #understand why.
+        bla = dict()
+        for k,v in  d.items():
+            bla[k[0]]=v
+        return bla
         return d
-
 
 
 def merge_log(log,res=60):
