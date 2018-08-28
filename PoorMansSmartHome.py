@@ -175,7 +175,7 @@ class Home:
         df            = self.get_motion_log(last_row=last_row)
         out.append(df)
         
-        return merge_log(out)
+        return join_log(out)
 
     def CurrentState(self,last_row=1):
         '''
@@ -205,7 +205,7 @@ class Home:
 def add_index(d):
         """
             transforms epoch second to DatetimeIndex after rounding to minutes
-            and possibly removing the @ char.
+            and possibly removing the @ char. Removes any duplicate indices.
         """
         #if second has an at sign remove it
         try: 
@@ -275,21 +275,13 @@ def tuplekey_to_nested(d):
         return d
 
 
-def merge_log(log,res=60):
+def join_log(log):
     """
-        Aligns list of dataframes in log at a resolution of RES.
-        Uses epoch time columns of both DataFrames
-        Default resolution is in minutes, all data in the same minute
-        after epoch time is considered to belong together and merged.
+        Joins a list of dataframes in LOG using their index.
     """
     df0           = log[0]
-    df0["merger"] = list(df0.index.get_level_values("second").to_series().apply(lambda x:x//res))
-    #df0           = df0.filter(regex="^((?!time_*).)*$")
     for df in log[1:]:
-        #df["merger"] = df.second.apply(lambda x:x//res) 
-        df["merger"] = list(df.index.get_level_values("second").to_series().apply(lambda x:x//res))
-        df0 = df0.merge(df,on=["merger"])
-    df0.set_index("merger",inplace=True) 
+        df0 = df0.join(df,how='outer')
     return df0
 def EpochConverter(serie,to):
     """
