@@ -47,8 +47,8 @@ class Home:
             last_row = self.LogLength(self.file_device_log) - last_row #number of rows to be skipped.
     
         d                        = pd.read_csv(self.file_device_log,delimiter=" ",names=["selim_laptop","sonja_laptop","selim_phone","sonja_phone","second"],usecols=[1,2,3,4,6],skiprows=last_row)
-        d.second               = d.second.apply(lambda x: int(x[1:])) #remove the @ sign
-        d                        = add_index_attribute(d)
+ 
+        d                        = add_index(d)
         d.columns                = pd.MultiIndex.from_product([['device_presence'],d.columns,['state']],names=["log_type","source","attribute"])
         return d
 
@@ -60,8 +60,7 @@ class Home:
             last_row = self.LogLength(self.file_motion_log) - last_row #number of rows to be skipped.
         
         df = pd.read_csv(self.file_motion_log,header=None,delimiter=' ',usecols=[0,7],names=["motion","second"],skiprows=last_row)
-        df.second = df.second.astype('int64')
-        df          = add_index_attribute(df)
+        df                       = add_index(df)
         df.columns               = pd.MultiIndex.from_product([['motion'],df.columns,['state']],names=["log_type","source","attribute"])
         return df
     def get_mic_log(self,last_row=0):
@@ -81,9 +80,7 @@ class Home:
         #df["power"]  = df["power"].apply(lambda x: (x-np.mean(x))/np.std(x))
         #remove all freq channels
         df             =  df.drop(data_cols,axis=1)
-        #add time_ attributes
-        df.second    = df.second.astype('int64')
-        df             = add_index_attribute(df)
+        df                        = add_index(df)
         df.columns               = pd.MultiIndex.from_product([['mic'],df.columns,['state']],names=["log_type","source","attribute"])
         return df
     def get_light_log(self, last_row=0):
@@ -97,26 +94,24 @@ class Home:
         d = d.astype(np.float64).values
     
         time      = d[:,-1]
-        time_bin  = np.int8(np.floor((time % (60*60*24))/(60*60)))  #time bin
         lamps     = np.unique(d[:,list(range(0,21,4))])
-        #lampdata = dict()
         lampdata = [];
         for lamp in lamps:
             i                   = d == lamp
             dummy               = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
             df                  = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,].astype(np.int),"second":time})
             df.second           = df.second.astype('int64')
-            df                  = add_index_attribute(df)
+
+            df = add_index(df)
             df.columns          = pd.MultiIndex.from_product([ ["light"],[str(int(lamp))],df.columns],names=["log_type","source","attribute"])            
             lampdata.append(df)
-                                                      #columns = pd.MultiIndex.from_product([["light"],["source"],["b","h","s"]],names=["log_type","source","attributes"]))
         lamp_df = pd.concat(lampdata,axis=1)
         return lamp_df
     def get_location_history(self,delta=(0.001,0.002)):
         '''
             Computes a binary home presence vector based on data logged in google map and 
             coordinates of home.
-            LocationHistory and LabeledPlaces can be both downloaded from Google Servers.
+ sas           LocationHistory and LabeledPlaces can be both downloaded from Google Servers.
             Delta (latitude, longitude) defines spatial extend where a point is considered as "at_home".
             Returns a DataFrame object containing all history data together with the at_home state vector.
         '''
@@ -207,8 +202,29 @@ class Home:
 
 
 
+def add_index(d):
+        """
+            transforms epoch second to DatetimeIndex after rounding to minutes
+            and possibly removing the @ char.
+        """
+        try: 
+            if d.second.at[0][0] == '@':
+                d.second = d.second.apply(lambda x: x[1:])
+        except:
+            pass
+        
+        d.index                  = pd.to_datetime(d.second.apply(lambda x:
+                                                    int(x) // 60 * 60 ), 
+                                                    unit="s")
+        d.drop("second",inplace=True,axis=1)        
+        return d
+
 def add_index_attribute(df):
-    
+    """
+        uses available time information which is in the form of epoch seconds,
+        and develops novel attributes. Obsolet since I started using datatime
+        objects as df index.
+    """
     df["hour"]   = list(df.second.apply(lambda x: int(np.floor( (x / 3600)      % 24    ))))  # hours of the day
     df["month"]    = list(df.second.apply(lambda x: int(np.floor( (x / (3600*24*30))         ))))  # days of the week
     df["week"]    = list(df.second.apply(lambda x: int(np.floor( (x / (3600*24*7))         ))))  # days of the week
