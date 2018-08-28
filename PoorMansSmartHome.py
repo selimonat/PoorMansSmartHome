@@ -207,16 +207,22 @@ def add_index(d):
             transforms epoch second to DatetimeIndex after rounding to minutes
             and possibly removing the @ char.
         """
+        #if second has an at sign remove it
         try: 
             if d.second.at[0][0] == '@':
                 d.second = d.second.apply(lambda x: x[1:])
         except:
             pass
         
+        #round it to minute and use it as index
         d.index                  = pd.to_datetime(d.second.apply(lambda x:
                                                     int(x) // 60 * 60 ), 
                                                     unit="s")
-        d.drop("second",inplace=True,axis=1)        
+        #remove the second column
+        d.drop("second",inplace=True,axis=1)
+        
+        #fill with NaN if log is missing
+        d = d.asfreq('1M')
         return d
 
 def add_index_attribute(df):
