@@ -221,8 +221,14 @@ def add_index(d):
         #remove the second column
         d.drop("second",inplace=True,axis=1)
         
+        #remove possible duplicate indices
+        di = d.index.duplicated()
+        if sum(di) > 0:
+            print('Warning: {} duplicate indices are removed'.format(sum(di)))
+            d  = d[~di]
+
         #fill with NaN if log is missing
-        d = d.asfreq('1M')
+        d = d.asfreq('1Min')
         return d
 
 def add_index_attribute(df):
