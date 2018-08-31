@@ -19,13 +19,15 @@ def df_to_bar(df):
     P    = []
     for k in K:
         p = figure(tools="pan,box_zoom,reset,save",
-               title="test",
-               x_axis_label="x",
-               y_axis_label="y",
-               plot_width=200,
+               title=k,
+               x_axis_label="time",
+               y_axis_label="",
+               plot_width=400,
                plot_height=200,            
-               x_axis_type="datetime")
-        p.vbar('second',1,k,
+               x_axis_type="datetime",
+                y_axis_location='right',
+                  toolbar_location='above')
+        p.vbar('second',50*1000,k,
            bottom=0,
            color="black",
            source=data)
