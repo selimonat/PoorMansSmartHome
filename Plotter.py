@@ -7,44 +7,31 @@ from scipy.stats import zscore
 from bokeh.plotting import figure, output_file, show 
 from bokeh.embed import components
 from bokeh.transform import linear_cmap
+from bokeh.models.sources import ColumnDataSource
 
-def df_to_bar(d):
-    """
-		d is dict form of current_state df.
-    """
-	for k1 in d.keys():
-		for k2 in d[k1].keys():
-			for k3 in d[k1][k2].keys():
-				script, div = P.df_to_bar()
-				d[k1][k2][k3].update({'div': div})
-				d[k1][k2][k3].update({'script': script})
-	return d
 
-def df_to_bar():
+def df_to_bar(df):
     """
-        data is a dict with x and y keys.
+        d is dict form of current_state df.
     """
-
-    #output_file = "/tmp/page.html"
-    p = figure(tools="pan,box_zoom,reset,save",
+    data = ColumnDataSource(df.filter(like='state'))   
+    K    =list(data.data.keys())
+    P    = []
+    for k in K:
+        p = figure(tools="pan,box_zoom,reset,save",
                title="test",
                x_axis_label="x",
                y_axis_label="y",
-               plot_width=800,
+               plot_width=200,
                plot_height=200,            
                x_axis_type="datetime")
-    p.grid.visible=False
-    X=[1,2,3,4]
-    Y=[3,4,5,6]
-    p.vbar(x=X,
-           top=Y,
-           width=1,
+        p.vbar('second',1,k,
            bottom=0,
-           color="black")
-           #fill_color=linear_cmap(Y,'Viridis256',0,max(Y)),
-          #)
-
-    script, div = components(p)
+           color="black",
+           source=data)
+        P.append(p)
+    script, div = components(P)
+    div         = dict(zip(K,div))
     return script, div
 
 def historical_viewa(current_state):
