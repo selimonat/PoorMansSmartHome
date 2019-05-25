@@ -46,7 +46,11 @@ def log_motion():
         else:
             out  = out - img
         time.sleep(3)
-    gpCam.delete("all")
+        
+    if len(gpCam.listMedia(format=True, media_array=True)) > 150:
+        print('Will now delete all photos')
+        gpCam.delete("all")
+    
     #compute the absolute diffference between two images
     print("Computing motion power")
     out = abs(out);
