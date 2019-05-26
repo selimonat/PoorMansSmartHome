@@ -112,7 +112,7 @@ class Home:
         d = d.stack(dropna=False).unstack(level=[2,1,3])
         d.columns.rename('attribute',level=2,inplace=True)
         return d
-def get_location_history(self,delta=(0.001,0.002)):
+    def get_location_history(self,delta=(0.001,0.002)):
         '''
             Computes a binary home presence vector based on data logged in google map and 
             coordinates of home.
