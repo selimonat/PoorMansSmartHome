@@ -21,7 +21,9 @@ class Home:
         Gets the log file of various sources.
         """
         method_name = 'get_' + str(log_name) + '_log'
+        print(method_name)
         method = getattr(self, method_name, lambda: "Invalid log name")
+        print(method)
         return method()
 
     def get_plot(self,log_name):
@@ -96,21 +98,21 @@ class Home:
         """
         if last_row != 0:
             last_row = self.LogLength(self.file_light_log) - last_row #number of rows to be skipped.
-            d = pd.read_csv(self.file_light_log,
-                            index_col=4,
-                            header=None,
-                            delimiter="\t",
-                            names=['source','brightness','color','state'],
-                            dtype={0:'category',1:'float',2:'float',3:bool},
-                            skiprows=last_row
-                           )
-            d['time'] = d.index
-            d["log_type"] = "light_log"
-            d.set_index(keys=['time','source','log_type'],inplace=True)
-            d = d.stack(dropna=False).unstack(level=[2,1,3])
-            d.columns.rename('attribute',level=2,inplace=True)
-            return d
-    def get_location_history(self,delta=(0.001,0.002)):
+        d = pd.read_csv(self.file_light_log,
+                        index_col=4,
+                        header=None,
+                        delimiter="\t",
+                        names=['source','brightness','color','state'],
+                        dtype={0:'category',1:'float',2:'float',3:bool},
+                        skiprows=last_row
+                       )
+        d['time'] = d.index
+        d["log_type"] = "light_log"
+        d.set_index(keys=['time','source','log_type'],inplace=True)
+        d = d.stack(dropna=False).unstack(level=[2,1,3])
+        d.columns.rename('attribute',level=2,inplace=True)
+        return d
+def get_location_history(self,delta=(0.001,0.002)):
         '''
             Computes a binary home presence vector based on data logged in google map and 
             coordinates of home.
