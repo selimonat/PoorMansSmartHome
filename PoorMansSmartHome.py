@@ -30,8 +30,13 @@ class Home:
         """       
         script_div = ()
         df = self.get_log(log_name)                        
-        P = [pl.df_to_histogram(df[df[col] == df[col].max()]) for col in ["day", "week", "month"]]
-        P.append(pl.df_to_histogram(df))
+ 
+        P = [ pl.df_to_histogram(df[ df.index.day == df.index.day.max()]),
+              pl.df_to_histogram(df[ df.index.week == df.index.week.max()]),
+              pl.df_to_histogram(df[ df.index.month == df.index.month.max()]), 
+              pl.df_to_histogram(df)
+             ]
+ 
         script,div = pl.histogram_to_plot((tuple(P)))
         return script,div
 
@@ -72,16 +77,18 @@ class Home:
         #load log file
         df             = pd.read_csv(self.file_mic_log,sep=' ',header=None,names=["freq_{}".format(f) for f in range(16)] + ["second"],skiprows=last_row)
         #remove zero freq, not interesting
-        df             = df.drop('freq_0',axis=1)
+        #df             = df.drop('freq_0',axis=1)
         #collapse power across frequencies
-        data_cols      = df.filter(like='freq_').columns
-        df["power"]    = df[data_cols].sum(axis=1)
+        data_cols      = df.filter(like='freq_').columns[1::2]
+        #df["power"]    = -np.log10(df[data_cols].sum(axis=1))
+        #df["power"]    = -np.log10(df[data_cols].sum(axis=1))
         #zscore transformation on power (causes an obvious problem when only one row is asked for)
         #df["power"]  = df["power"].apply(lambda x: (x-np.mean(x))/np.std(x))
         #remove all freq channels
-        df             =  df.drop(data_cols,axis=1)
-        df                        = add_index(df)
-        df.columns               = pd.MultiIndex.from_product([['mic'],df.columns,['state']],names=["log_type","source","attribute"])
+        df             = df.drop(data_cols,axis=1)
+        df             = add_index(df)
+        #df             = df.apply(lambda x: -np.log10(x))
+        df.columns     = pd.MultiIndex.from_product([['mic'],df.columns,['state']],names=["log_type","source","attribute"])
         return df
     def get_light_log(self, last_row=0):
         """
@@ -89,29 +96,23 @@ class Home:
         """
         if last_row != 0:
             last_row = self.LogLength(self.file_light_log) - last_row #number of rows to be skipped.
-        
-        d = pd.read_csv(self.file_light_log,header=None,delimiter=" ",usecols=list(range(0,24)) + [31],skiprows=last_row)
-        d = d.astype(np.float64).values
-    
-        time      = d[:,-1]
-        lamps     = np.unique(d[:,list(range(0,21,4))])
-        lampdata = [];
-        for lamp in lamps:
-            i                   = d == lamp
-            dummy               = np.array([d[np.roll(i,shift) == True] for shift in range(1,4)])
-            df                  = pd.DataFrame({"brightness":dummy[0,],"hue":dummy[1,],"state":dummy[2,].astype(np.int),"second":time})
-            df.second           = df.second.astype('int64')
-
-            df = add_index(df)
-            df.columns          = pd.MultiIndex.from_product([ ["light"],[str(int(lamp))],df.columns],names=["log_type","source","attribute"])            
-            lampdata.append(df)
-        lamp_df = pd.concat(lampdata,axis=1)
-        return lamp_df
+            d = pd.read_csv(self.file_light_log,
+                            index_col=4,
+                            header=None,
+                            delimiter="\t",
+                            names=['lamp','brightness','color','state'],
+                            dtype={0:'category',1:'float',2:'float',3:bool},
+                            skiprows=last_row
+                           )
+            d['time'] = d.index
+            d.set_index(keys=['time','lamp'],inplace=True)
+            d = d.stack(dropna=False).unstack(level=[1,2])
+            return d
     def get_location_history(self,delta=(0.001,0.002)):
         '''
             Computes a binary home presence vector based on data logged in google map and 
             coordinates of home.
- sas           LocationHistory and LabeledPlaces can be both downloaded from Google Servers.
+            LocationHistory and LabeledPlaces can be both downloaded from Google Servers.
             Delta (latitude, longitude) defines spatial extend where a point is considered as "at_home".
             Returns a DataFrame object containing all history data together with the at_home state vector.
         '''
@@ -169,8 +170,8 @@ class Home:
         df    = self.get_mic_log(last_row=last_row)
         out.append(df)
 
-        df    = self.get_light_log(last_row=last_row)
-        out.append(df)
+        #df    = self.get_light_log(last_row=last_row)
+        #out.append(df)
 
         df            = self.get_motion_log(last_row=last_row)
         out.append(df)
@@ -183,13 +184,12 @@ class Home:
         '''
         out = dict()
         df    = self.get_device_log(last_row=last_row)
-        out["device"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
+        out["device"] = df.to_dict(orient='list')
         
         df    = self.get_mic_log(last_row=last_row)
-        out["mic"] = df.filter(regex="^((?!time_*).)*$").to_dict(orient='list')
+        out["mic"] = df.to_dict(orient='list')
 
-        df    = self.get_light_log(last_row=last_row)
-        df    = df.filter(regex="state")      
+        df    = self.get_light_log(last_row=last_row)      
         df.columns = df.columns.get_level_values(0)
    
         out["light"] = df.to_dict(orient='list')
