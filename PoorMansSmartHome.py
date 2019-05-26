@@ -100,7 +100,7 @@ class Home:
                             index_col=4,
                             header=None,
                             delimiter="\t",
-                            names=['lamp','brightness','color','state'],
+                            names=['source','brightness','color','state'],
                             dtype={0:'category',1:'float',2:'float',3:bool},
                             skiprows=last_row
                            )
