@@ -105,8 +105,10 @@ class Home:
                             skiprows=last_row
                            )
             d['time'] = d.index
-            d.set_index(keys=['time','lamp'],inplace=True)
-            d = d.stack(dropna=False).unstack(level=[1,2])
+            d["log_type"] = "light_log"
+            d.set_index(keys=['time','source','log_type'],inplace=True)
+            d = d.stack(dropna=False).unstack(level=[2,1,3])
+            d.columns.rename('attribute',level=2,inplace=True)
             return d
     def get_location_history(self,delta=(0.001,0.002)):
         '''
