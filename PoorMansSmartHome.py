@@ -21,10 +21,8 @@ class Home:
         Gets the log file of various sources.
         """
         method_name = 'get_' + str(log_name) + '_log'
-        print(method_name)
         method = getattr(self, method_name, lambda: "Invalid log name")
-        print(method)
-        return method()
+        return method(last_row=60*24*5) #limit to last 50 days
 
     def get_plot(self,log_name):
         """
@@ -103,14 +101,16 @@ class Home:
                         header=None,
                         delimiter="\t",
                         names=['source','brightness','color','state'],
-                        dtype={0:'category',1:'float',2:'float',3:bool},
+                        dtype={0:'category',1:'uint8',2:'float',3:'uint8'},
                         skiprows=last_row
                        )
         d['time'] = d.index
         d["log_type"] = "light_log"
         d.set_index(keys=['time','source','log_type'],inplace=True)
+        d = d.loc[~d.index.duplicated(keep='first')]
         d = d.stack(dropna=False).unstack(level=[2,1,3])
         d.columns.rename('attribute',level=2,inplace=True)
+        d.index = pd.to_datetime(d.index,unit='s')
         return d
     def get_location_history(self,delta=(0.001,0.002)):
         '''
@@ -158,10 +158,9 @@ class Home:
         '''
         Returns number of lines in a filename
         '''
-        with open(filename) as f:
-            for i, l in enumerate(f):
-                pass
-        return i+1
+        import subprocess
+        ps = int(subprocess.check_output('cat ' + filename +  ' | wc -l',shell=True))
+        return ps
 
     def CurrentState_as_df(self,last_row=1):
         '''
@@ -171,14 +170,14 @@ class Home:
         df  = self.get_device_log(last_row=last_row)
         out.append(df)
         
-        df    = self.get_mic_log(last_row=last_row)
-        out.append(df)
+        #df    = self.get_mic_log(last_row=last_row)
+        #out.append(df)
 
         #df    = self.get_light_log(last_row=last_row)
         #out.append(df)
 
-        df            = self.get_motion_log(last_row=last_row)
-        out.append(df)
+        #df            = self.get_motion_log(last_row=last_row)
+        #out.append(df)
         
         return join_log(out)
 
