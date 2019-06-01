@@ -27,7 +27,7 @@ def df_to_bar(df):
                x_axis_type="datetime",
                 y_axis_location='right',
                   toolbar_location='above')
-        p.vbar('second',50*1000,k,
+        p.vbar('second',30*1000,k,
            bottom=0,
            color="black",
            source=data)
@@ -51,12 +51,12 @@ def df_to_histogram(df,cols="all",normalize=False):
     """
     counts average state of device in DF for each hour of day.
     """
-    dft       = df.filter(like="time_")
-    df        = df.filter(regex="^((?!time_*).)*$")
+    #dft       = df.index
+    #df        = df.filter(regex="^((?!time_*).)*$")
 
     #bins to hours
-    t              = np.unique(dft.time_hour)                        #possible hours
-    T              = np.bincount(list(dft.time_hour))                      #total counts for each hour
+    t              = np.unique(df.index.hour)                        #possible hours
+    T              = np.bincount(list(df.index.hour.values))                      #total counts for each hour
     
     #take either all or selected columns
     if cols is "all":
@@ -69,7 +69,8 @@ def df_to_histogram(df,cols="all",normalize=False):
     for col in cols:
         if normalize is True:
             df[col] = (df[col] - df[col].mean())/df[col].std(ddof=0)
-        h.update({col:{"x":t,"y":np.bincount(list(dft.time_hour),df[col])/T}})
+        D = df[col].dropna()
+        h.update({col:{"x":t,"y":np.bincount(list(D.index.hour),D)/T}})
     return h
 
 def histogram_to_plot(H):
