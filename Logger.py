@@ -82,6 +82,26 @@ def log_motion():
     
     return motion_power
 
+def sql_audio():
+    from scipy.fftpack import rfft
+    import time, os
+#    #get spectrum   
+    fft_N              = 8
+    _,signal_time =  record_sound()
+    signal      = wav_to_float()
+    y_hat       = abs(rfft(signal,fft_N)) ** 2
+    freq        = round(linspace(0,1,fft_N/2+1)*NyquistFreq)
+    freq        = [int(f) for f in freq]
+    data        = list(zip(freq,y_hat))
+    #export it to table (this could be fun later)
+    import MySQLdb
+    import subprocess
+    db = MySQLdb.connect("localhost", "selim", "password", "devices")
+    curs=db.cursor()
+
+    query = """INSERT INTO log_mic(freq,power) values (%s,%s)"""
+    curs.executemany(query,data)
+    db.commit()
     
 def log_audio():
     """ Takes a snapshot of the auditory landscape, computes its Fourier
@@ -130,3 +150,4 @@ def log_device():
     """
     command = "/home/pi/code/shell/bin/iOS_Presence_Logger.sh"
     return subprocess.call([command],shell=True), round(t.time()) 
+
