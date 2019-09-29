@@ -216,7 +216,8 @@ class Home:
         save_path  = self.visual_save_path
         filename   = save_path + str(round(time.time())) + ".jpg"
         gpCam.downloadLastMedia(custom_filename=filename)
-        
+        time.sleep(1)
+        gpCam.delete("all")
         #print("resizing image to 50%")
         #subprocess.call(["/usr/bin/convert {} -resize 25% {}".format(filename,filename)],shell=True)
         #print("sending results as an email")
