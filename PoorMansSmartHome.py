@@ -2,6 +2,12 @@ import pandas as pd
 import numpy as np
 from PoorMansSmartHome import Plotter as pl
 
+from goprocam import constants;
+from goprocam import GoProCamera;
+
+import time
+import subprocess
+
 class Home:
     def __init__(self):
         self.file_device_log     = "/home/pi/device_presence.log" 
@@ -9,6 +15,7 @@ class Home:
         self.file_motion_log     = "/home/pi/motion_detection.log" 
         self.file_mic_log        = "/home/pi/mic.log" 
         self.file_light_log       = "/home/pi/ikea_lamps.log" 
+        self.visual_save_path    = "/home/pi/getvisuals_log/"
         #self.log                 = {"device" : d,"human":[d]} 
         self.file_google_history = '/home/pi/MapHistory//Takeout/Location History/Location History.json'
         self.file_google_labels  = '/home/pi/MapHistory/Takeout/Maps/My labeled places/Labeled places.json'
@@ -202,8 +209,18 @@ class Home:
         
         out["file"] = {"home_visual":"0.JPG","motion_energy" : "motion_energy.JPG"}  
         return out
-
-
+    def take_a_photo(self):
+        gpCam = GoProCamera.GoPro(constants.auth)
+        gpCam.take_photo(1)
+        time.sleep(2)
+        save_path  = self.visual_save_path
+        filename   = save_path + str(round(time.time())) + ".jpg"
+        gpCam.downloadLastMedia(custom_filename=filename)
+        
+        #print("resizing image to 50%")
+        #subprocess.call(["/usr/bin/convert {} -resize 25% {}".format(filename,filename)],shell=True)
+        #print("sending results as an email")
+        #subprocess.Popen(["/home/pi/code/shell/bin/SendLastPic.sh","/home/pi/getvisuals_log/","'Email sent by GetVisual.py'","Visual from your home", "onatselim@gmail.com"])
 
 def add_index(d):
         """
